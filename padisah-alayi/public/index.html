@@ -72,6 +72,22 @@
   .bn.auto{background:linear-gradient(135deg,rgba(232,170,40,.97),rgba(42,120,80,.95));box-shadow:0 16px 60px rgba(246,196,83,.5),inset 0 0 0 4px rgba(255,255,255,.35)}
   .bn.auto .bn-g{font-size:36px;font-weight:900}
   .bn{background:linear-gradient(135deg,rgba(179,18,46,.96),rgba(200,120,40,.96))}
+  /* test masası */
+  #side{overflow-y:auto}
+  #side .panel.grow{min-height:160px;max-height:260px}
+  #test .tk label{font-size:12px;color:var(--mute);font-weight:800}
+  #test .row2{margin-top:5px}
+  #test select{flex:1;min-width:0;background:#0f0c1b;border:1px solid var(--line);color:var(--text);border-radius:9px;padding:6px;font:inherit;font-size:13px;font-weight:800}
+  .tb{background:var(--panel2);border:1px solid var(--line);color:var(--text);border-radius:9px;padding:6px 9px;font-size:12px;font-weight:900;cursor:pointer}
+  .tb:hover{border-color:var(--gold)}
+  .tk-h{margin:10px 0 5px;font-size:12px;font-weight:900;color:#e8d3a8}
+  .tk-h small{font-weight:600;color:var(--mute)}
+  .btns.b3{grid-template-columns:repeat(3,1fr)}
+  .btns button.on{border-color:var(--gold);background:#4a3a1c}
+  .tsonuc{margin-top:6px;font-size:12px;padding:6px 8px;border-radius:8px;background:#0f0c1b;border:1px solid var(--line);color:var(--mute)}
+  .tsonuc.ok{color:#9ee3c0;border-color:#2f6b4a}
+  .tsonuc.yok{color:#e8d3a8}
+  #chatText{flex:1}
 </style>
 <script type="importmap">{ "imports": { "three": "/three/build/three.module.js", "three/addons/": "/three/examples/jsm/" } }</script>
 </head>
@@ -152,22 +168,34 @@
       <div class="panel-h">💬 Canlı akış</div>
       <ul id="feed"></ul>
     </div>
-    <div class="panel">
-      <div class="panel-h">🧪 Demo <label class="sw"><input type="checkbox" id="autoDemo" checked><span>Otomatik izleyici</span></label></div>
-      <div class="btns">
-        <button data-demo="join">👥 +5 yorum</button>
-        <button data-demo="yasa">📣 "Çok yaşa"</button>
-        <button data-demo="likes">❤️ +60 beğeni</button>
-        <button data-demo="harita">🗺️ "Nerdeyiz"</button>
-        <button data-demo="ileri">⏩ Sonraki durak</button>
-        <button data-demo="reset">🧹 Sıfırla</button>
+    <div class="panel" id="test">
+      <div class="panel-h">🧪 Test masası <span class="hint">yayın açmadan dene</span></div>
+      <div class="tk">
+        <label>Kim adına?</label>
+        <div class="row2"><select id="tUser"></select><button id="tYeni" class="tb" title="Yeni sahte izleyici">+1</button><button id="tYeni5" class="tb" title="5 sahte izleyici yorum yazsın">+5</button></div>
+        <div class="row2"><input id="tAd" placeholder="Yeni isim (ör. Faruk)" maxlength="20"><button id="tAdEkle" class="tb">Ekle</button></div>
       </div>
-      <div class="btns" id="ruleBtns" style="margin-top:6px"></div>
       <form id="chatForm" autocomplete="off">
-        <input id="chatName" placeholder="İsim" value="Bilal" maxlength="16">
-        <input id="chatText" placeholder="Yorum… (selam / çok yaşa / nerdeyiz)" maxlength="80">
+        <input id="chatText" placeholder="Yorum yaz… (gerçek yorum gibi işlenir)" maxlength="80">
         <button>Gönder</button>
       </form>
+      <div id="tSonuc" class="tsonuc">Bir yorum gönder, algılanan komut burada görünür.</div>
+      <div class="tk-h">Komutlar <small>(seçili kişi bu yorumu yazar)</small></div>
+      <div class="btns" id="tKomut"></div>
+      <div class="tk-h">Beğeni · takip · paylaşım</div>
+      <div class="btns b3">
+        <button data-t="like1">❤️ 1 beğeni</button><button data-t="like10">❤️ 10</button><button data-t="like50">❤️ 50</button>
+        <button data-t="follow">➕ Takip</button><button data-t="share">🔗 Paylaş</button><button data-t="hediye5">🎁 Eşleşmeyen</button>
+      </div>
+      <div class="tk-h">Hediyeler <small>(hediyeler.json)</small></div>
+      <div class="btns" id="ruleBtns"></div>
+      <div class="tk-h">Kamera</div>
+      <div class="btns b3" id="tKamera"></div>
+      <div class="tk-h">Yolculuk</div>
+      <div class="btns b3">
+        <button data-demo="ileri">⏩ Sonraki durak</button><button data-demo="varis">🏰 Varışa atla</button><button data-demo="reset">🧹 Sıfırla</button>
+      </div>
+      <label class="sw" style="margin:10px 0 0"><input type="checkbox" id="autoDemo"><span>Otomatik sahte izleyiciler (kalabalık testi)</span></label>
     </div>
     <div class="panel">
       <div class="panel-h">🎁 Hediye kaydı <span class="hint">ad · id · jeton → eşleşme</span></div>

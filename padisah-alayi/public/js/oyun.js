@@ -114,10 +114,10 @@ export function createGame(alay) {
   };
 
   function command(u, text) {
-    const t = norm(text);
-    if (!t) return;
+    const t = norm(text), bul = [];
+    if (!t) { G.emit('komut', { user: u, text, bul }); return; }
     if (has(t, 'selam', 'slm', 'merhaba', ' sa ', ' hey')) {
-      G.emit('chipHit', 'selam');
+      G.emit('chipHit', 'selam'); bul.push('👋 selam');
       alay.selam(u, G.time);
       if (G.time - G.selamT > 6) {
         G.selamT = G.time; alay.selam('padisah', G.time + 0.4);
@@ -126,7 +126,7 @@ export function createGame(alay) {
       }
     }
     if (has(t, 'yasa', 'padisahim', 'sultanim')) {
-      G.emit('chipHit', 'yasa');
+      G.emit('chipHit', 'yasa'); bul.push('📣 çok yaşa');
       if (G.time - G.coskuT > 5) {
         G.coskuT = G.time; alay.cosku(G.time); G.addEnergy(4);
         G.emit('announce', '📣 Padişahım çok yaşa!');
@@ -134,12 +134,16 @@ export function createGame(alay) {
       } else { const U = u.ch && (u.ch.userData.binici || u.ch.userData); if (U) U.cosT = G.time; }
     }
     if (has(t, 'harita', 'nerde', 'nerede', 'neredeyiz', 'nerdeyiz', 'konum')) {
-      G.emit('chipHit', 'harita');
+      G.emit('chipHit', 'harita'); bul.push(G.time - G.haritaT > 40 ? '🗺️ harita' : '🗺️ harita (40 sn bekleme)');
       if (G.time - G.haritaT > 40) { G.haritaT = G.time; G.emit('focus', 'harita'); }
     }
-    if (has(t, 'hizlan', 'hizli', 'kos', 'dortnala', 'cabuk')) { G.addEnergy(2); G.emit('chipHit', 'begen'); }
-    if (has(t, 'zipla', 'hop')) u.ziplaT = G.time;
-    if (has(t, 'mehter') && u.rol === 'yeniceri' && alay.sayi('mehter') < ROL.mehter.max) { alay.ekle(u, 'mehter'); G.emit('announce', `🥁 ${u.nick} mehter takımına geçti!`); }
+    if (has(t, 'hizlan', 'hizli', 'kos', 'dortnala', 'cabuk')) { G.addEnergy(2); G.emit('chipHit', 'begen'); bul.push('💨 hızlan'); }
+    if (has(t, 'zipla', 'hop')) { u.ziplaT = G.time; bul.push('🤸 zıpla'); }
+    if (has(t, 'mehter')) {
+      if (u.rol === 'yeniceri' && alay.sayi('mehter') < ROL.mehter.max) { alay.ekle(u, 'mehter'); G.emit('announce', `🥁 ${u.nick} mehter takımına geçti!`); bul.push('🥁 mehter'); }
+      else bul.push(u.rol === 'mehter' ? '🥁 mehter (zaten mehter)' : u.rol !== 'yeniceri' ? '🥁 mehter (rolü var, değişmez)' : '🥁 mehter (takım dolu)');
+    }
+    G.emit('komut', { user: u, text, bul });
   }
 
   G.matchRule = (gf) => {

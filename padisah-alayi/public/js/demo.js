@@ -8,7 +8,7 @@ const pick = (a) => a[Math.floor(Math.random() * a.length)];
 const rand = (a, b) => a + Math.random() * (b - a);
 
 export function createDemo(G, alay) {
-  const D = { on: true, paused: false, pool: [], t: 0, next: 0.3, vt: 0 };
+  const D = { on: false, paused: false, pool: [], t: 0, next: 0.3, vt: 0 };
   const used = new Set();
   for (let i = 0; i < 90; i++) {
     let nm = pick(Math.random() < 0.5 ? F : M);
@@ -24,6 +24,7 @@ export function createDemo(G, alay) {
     const dia = r.jeton != null ? r.jeton : r.minJeton;
     G.handle({ type: 'gift', user: user || present(), gift: { name: (r.ad && r.ad[0]) || r.etiket, id: (r.id && r.id[0]) || '', diamonds: dia, count: 1, icon: r.ikon || '🎁' } });
   };
+  D.absent = absent;
   D.act = (k) => {
     if (k === 'join') for (let i = 0; i < 5; i++) setTimeout(() => G.handle({ type: 'chat', user: absent(), text: pick(CH) }), i * 250);
     else if (k === 'yasa') for (let i = 0; i < 3; i++) setTimeout(() => G.handle({ type: 'chat', user: present(), text: 'Padişahım çok yaşa' }), i * 300);
@@ -34,6 +35,7 @@ export function createDemo(G, alay) {
       const d = G.dir > 0 ? DURAKLAR.find((x) => x.s > G.s + 16) : [...DURAKLAR].reverse().find((x) => x.s < G.s - 16);
       if (d) G.s = d.s - G.dir * 15;
     }
+    else if (k === 'varis') { if (G.durum === 'yol') G.s = G.dir > 0 ? DURAKLAR[DURAKLAR.length - 1].s - 6 : 6; }
     else if (k === 'reset') { G.reset(); document.getElementById('feed').innerHTML = ''; }
   };
   D.tick = (dt) => {

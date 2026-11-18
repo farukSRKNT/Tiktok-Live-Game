@@ -62,6 +62,9 @@ const UI = createUI(G, camera, alay, {
   onQuality: setQuality, demo, live,
   onFocus: (name) => director.focusOn(name, name === 'harita' ? 16 : 6),
   onNext: () => director.next(),
+  onMap: () => director.toggleHarita(),
+  onShot: (n) => director.focusOn(n, n === 'harita' ? 16 : 10),
+  director,
 });
 G.on('yapi', (d) => { yapiDurak = d; director.focusOn(d.yapi === 'kopru' ? 'yan' : 'yapi', 8); });
 let yapiDurak = null;

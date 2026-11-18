@@ -261,6 +261,10 @@ export function createUI(G, camera, alay, hooks) {
       $('trackInfo').textContent = !A.music ? '🥁 Müzik: kodla üretilen mehter (müzik klasörü boş). Varsayılan: kapalı' : tr ? `🎵 ${tr.name} · ${A.ti + 1}/${A.tracks.length}` : `🎵 ${A.tracks.length} parça hazır, müziği başlat`;
       $('cnt').textContent = `⚔️ ${alay.sayi('yeniceri')} yeniçeri · 🥁 ${alay.sayi('mehter')} · 🚩 ${alay.sayi('sancak')} · 🐎 ${alay.sayi('sipahi')} · 👑 ${alay.sayi('musahip')}`;
       seritGuncelle();
+      kullaniciListesi();
+      const hOn = hooks.director.cur === 'harita';
+      $('btnMap').textContent = hOn ? '🗺️ Haritayı kapat' : '🗺️ Harita';
+      document.querySelectorAll('[data-shot]').forEach((b) => b.classList.toggle('on', b.dataset.shot === hooks.director.cur));
     }
     aT -= dt;
     if (aT <= 0) { if (aq.length) { showAnnounce(aq.shift()); aT = aq.length > 2 ? 1.2 : 2.3; } else if (annOn) { $('announce').classList.add('off'); annOn = false; } }
@@ -285,25 +289,65 @@ export function createUI(G, camera, alay, hooks) {
   if (qs.get('ses') === '1') { const auto = () => { if (!A.on) toggleSound(); }; setTimeout(auto, 900); addEventListener('pointerdown', auto, { once: true }); }
   const toggleClean = () => { document.body.classList.toggle('clean'); requestAnimationFrame(UI.fit); };
   $('btnClean').onclick = toggleClean;
-  $('btnMap').onclick = () => hooks.onFocus('harita');
+  $('btnMap').onclick = () => hooks.onMap();
   $('btnFull').onclick = () => { if (document.fullscreenElement) document.exitFullscreen(); else document.documentElement.requestFullscreen().catch(() => {}); };
   addEventListener('keydown', (e) => {
     if (e.target.tagName === 'INPUT') return;
     if (e.key === 'h' || e.key === 'H') toggleClean();
-    if (e.key === 'm' || e.key === 'M') hooks.onFocus('harita');
+    if (e.key === 'm' || e.key === 'M') hooks.onMap();
     if (e.key === 'n' || e.key === 'N') hooks.onNext();
   });
   if (qs.has('clean')) document.body.classList.add('clean');
-  if (qs.get('demo') === '0') { $('autoDemo').checked = false; hooks.demo.on = false; }
+  if (qs.get('demo') === '1') { $('autoDemo').checked = true; hooks.demo.on = true; }
   $('autoDemo').onchange = (e) => { hooks.demo.on = e.target.checked; };
   document.querySelectorAll('[data-demo]').forEach((b) => { b.onclick = () => hooks.demo.act(b.dataset.demo); });
+  // ---------- test masası ----------
+  const BEN = { id: 'test_faruk', nick: 'Faruk' };
+  let secili = BEN;
+  const kim = () => secili;
+  function kullaniciListesi() {
+    const sel = $('tUser'), me = G.users.get(BEN.id), list = [me || BEN, ...[...G.users.values()].filter((u) => u.id !== BEN.id).reverse()];
+    const seen = new Set(), opts = [];
+    for (const u of list) { if (seen.has(u.id)) continue; seen.add(u.id); opts.push(u); }
+    const key = opts.map((u) => u.id + (u.rol || '')).join('|');
+    if (sel.dataset.key === key) return;
+    sel.dataset.key = key;
+    const ROLAD = { mehter: '🥁', sancak: '🚩', musahip: '👑', sipahi: '🐎', yeniceri: '⚔️' };
+    sel.innerHTML = opts.map((u) => `<option value="${esc(u.id)}">${esc(u.nick)}${u.id === BEN.id ? ' (sen)' : ''} ${u.rol ? ROLAD[u.rol] || '' : '· alayda değil'}</option>`).join('');
+    sel.value = secili.id;
+  }
+  $('tUser').onchange = (e) => { const u = G.users.get(e.target.value); secili = u ? { id: u.id, nick: u.nick } : BEN; };
+  const yeniKisi = (nick) => { const u = nick ? { id: 'test_' + nick.toLocaleLowerCase('tr').replace(/\s+/g, '_'), nick } : hooks.demo.absent(); G.handle({ type: 'chat', user: u, text: 'Merhaba!' }); secili = { id: u.id, nick: u.nick }; kullaniciListesi(); $('tUser').value = u.id; };
+  $('tYeni').onclick = () => yeniKisi();
+  $('tYeni5').onclick = () => { for (let i = 0; i < 5; i++) setTimeout(() => yeniKisi(), i * 200); };
+  $('tAdEkle').onclick = () => { const n = $('tAd').value.trim(); if (n) { yeniKisi(n); $('tAd').value = ''; } };
+  $('tAd').onkeydown = (e) => { if (e.key === 'Enter') { e.preventDefault(); $('tAdEkle').click(); } };
+  const yorum = (t) => G.handle({ type: 'chat', user: kim(), text: t });
   $('chatForm').onsubmit = (e) => {
     e.preventDefault();
-    const n = $('chatName').value.trim() || 'Misafir', t = $('chatText').value.trim();
-    if (!t) return;
-    G.handle({ type: 'chat', user: { id: 'me_' + n.toLocaleLowerCase('tr'), nick: n }, text: t });
-    $('chatText').value = '';
+    const t = $('chatText').value.trim(); if (!t) return;
+    yorum(t); $('chatText').value = '';
   };
+  G.on('komut', (k) => {
+    const el = $('tSonuc');
+    el.className = 'tsonuc ' + (k.bul.length ? 'ok' : 'yok');
+    el.textContent = `${k.user.nick}: "${k.text}" → ` + (k.bul.length ? 'algılandı: ' + k.bul.join(', ') : 'komut yok (sadece yorum, balon çıkar)');
+  });
+  const KOMUTLAR = [['👋 selam', 'selam'], ['📣 çok yaşa', 'Padişahım çok yaşa'], ['🗺️ nerdeyiz', 'nerdeyiz'], ['🤸 hop', 'hop'], ['🥁 mehter', 'mehter'], ['💨 hızlan', 'hızlan'],
+    ['"SELAMMM"', 'SELAMMM'], ['cok yasa', 'cok yasa'], ['"harita" 🙂', '"harita" 🙂'], ['💬 düz yorum', 'Ne güzel manzara']];
+  $('tKomut').innerHTML = KOMUTLAR.map(([l], i) => `<button data-k="${i}" title="${esc(KOMUTLAR[i][1])}">${esc(l)}</button>`).join('');
+  $('tKomut').querySelectorAll('[data-k]').forEach((b) => { b.onclick = () => { if (KOMUTLAR[+b.dataset.k][1] === 'nerdeyiz') G.haritaT = -99; yorum(KOMUTLAR[+b.dataset.k][1]); }; });
+  document.querySelectorAll('[data-t]').forEach((b) => {
+    b.onclick = () => {
+      const k = b.dataset.t, u = kim();
+      if (k.startsWith('like')) G.handle({ type: 'like', user: u, count: +k.slice(4) });
+      else if (k === 'hediye5') G.handle({ type: 'gift', user: u, gift: { name: 'Test hediyesi', id: '', diamonds: 5, count: 1, icon: '🎁' } });
+      else G.handle({ type: k, user: u });
+    };
+  });
+  const SHOTS = [['padisah', 'Padişah'], ['ibrahim', 'İbrahim'], ['onden', 'Önden'], ['mehter', 'Mehter'], ['yan', 'Yandan'], ['sipahi', 'Sipahi'], ['arka', 'Arkadan'], ['yeniceri', 'Yeniçeri'], ['genis', 'Geniş'], ['harita', '🗺️ Harita']];
+  $('tKamera').innerHTML = SHOTS.map(([k, l]) => `<button data-shot="${k}">${l}</button>`).join('');
+  $('tKamera').querySelectorAll('[data-shot]').forEach((b) => { b.onclick = () => (b.dataset.shot === 'harita' ? hooks.onMap() : hooks.onShot(b.dataset.shot)); });
   $('liveForm').onsubmit = (e) => {
     e.preventDefault();
     const st = hooks.live.status.state;
@@ -314,7 +358,7 @@ export function createUI(G, camera, alay, hooks) {
   UI.renderRuleButtons = () => {
     UI.renderChips();
     $('ruleBtns').innerHTML = G.rules.map((r, i) => `<button data-rule="${i}">${esc(r.etiket)} · ${r.jeton != null ? r.jeton : r.minJeton + '+'}</button>`).join('');
-    document.querySelectorAll('[data-rule]').forEach((b) => { b.onclick = () => hooks.demo.ruleGift(+b.dataset.rule); });
+    document.querySelectorAll('[data-rule]').forEach((b) => { b.onclick = () => hooks.demo.ruleGift(+b.dataset.rule, kim()); });
   };
 
   // ---------- canlı bağlantı durumu ----------
@@ -331,7 +375,6 @@ export function createUI(G, camera, alay, hooks) {
     const hasDemo = [...G.users.keys()].some((id) => String(id).startsWith('demo_'));
     if (active && (hooks.demo.on || hasDemo)) { hooks.demo.on = false; $('autoDemo').checked = false; G.reset(); $('feed').innerHTML = ''; }
     $('autoDemo').disabled = active;
-    document.querySelectorAll('[data-demo]:not([data-demo=reset]):not([data-demo=ileri]),[data-rule]').forEach((b) => { b.disabled = active; });
   };
 
   renderBoard(); renderWalkers();

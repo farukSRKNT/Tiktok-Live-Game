@@ -39,6 +39,7 @@ export function createDirector(camera) {
     D.focus = true; go(name, dur);
   };
   D.jump = (name) => { const k = TOUR.findIndex((s) => s[0] === name); if (k >= 0) { D.i = k; D.focus = false; go(name, TOUR[k][1]); } };
+  D.toggleHarita = () => { if (D.cur === 'harita') D.next(); else D.focusOn('harita', 16); };
   D.next = () => { D.focus = false; D.i = (D.i + 1) % TOUR.length; go(TOUR[D.i][0], TOUR[D.i][1]); };
 
   D.update = (dt, P) => {
