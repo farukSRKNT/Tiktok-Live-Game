@@ -84,6 +84,7 @@ let yapiDurak = null;
 fetch('/api/rules').then((r) => r.json()).then((j) => { if (Array.isArray(j.kurallar) && j.kurallar.length) G.rules = j.kurallar; UI.renderRuleButtons(); }).catch(() => UI.renderRuleButtons());
 UI.renderRuleButtons();
 alay.loadModels();
+world.loadModels();
 
 // kaldığı yerden devam: sunucudaki son durumu yükle, sonra birkaç saniyede bir kaydet
 let kayitHazir = !SSE;

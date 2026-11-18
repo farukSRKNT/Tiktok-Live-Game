@@ -80,7 +80,14 @@ function agacSec(B, r) {
   let x = r() * tot; for (const [k, w] of B.agac) { if ((x -= w) <= 0) return k; }
   return B.agac[0][0];
 }
+// modeller/ klasöründen yüklenen yapılar (ev-1.glb, ev-2.glb …, kadirga.glb). Yoksa kodla yapılanlar kullanılır.
+const YAPI_GLB = { ev: [], kadirga: null };
 function ev(r) {
+  if (YAPI_GLB.ev.length) {
+    const g = YAPI_GLB.ev[Math.floor(r() * YAPI_GLB.ev.length) % YAPI_GLB.ev.length].clone();
+    const s = 0.85 + r() * 0.3; g.scale.set(s, s, s);
+    return g;
+  }
   const g = new THREE.Group(), w = 3 + r() * 2.5, d = 3 + r() * 2, h = 2.4 + r() * 2.2;
   const duvar = r() < 0.6 ? mat('evBeyaz', '#e8dfcc') : mat('evAhsap', '#b48c63');
   g.add(mesh(G.kutu, duvar, 0, h / 2, 0, w, h, d));
@@ -286,7 +293,13 @@ export function buildWorld(scene) {
     if (B.sazlik) for (let i = 0; i < B.sazlik; i++) { const k = mesh(G.koni, mat('saz', '#6f8a3a'), 0, 0.8, 0, 0.6, 1.8, 0.6); place(k, B.sol - 3, B.sol + 2, -1); }
     if (B.kayik) for (const s of [-1, 1]) {
       const kara = s < 0 ? B.sol : B.sag;
-      if (kara < 60 && r() < B.kayik) { const k = kayik(r); k.position.set(s * (kara + 10 + r() * 50), 0, (r() - 0.5) * L); k.rotation.y = r() * 0.6; g.add(k); }
+      if (kara < 60 && r() < B.kayik) {
+        // açık denizde arada bir uzakta kürekli kadırga geçer
+        const buyuk = YAPI_GLB.kadirga && bk === 'deniz' && r() < 0.35;
+        const k = buyuk ? YAPI_GLB.kadirga.clone() : kayik(r);
+        if (buyuk) { k.scale.setScalar(0.5); k.userData.salla = r() * 6; }
+        k.position.set(s * (kara + (buyuk ? 40 : 10) + r() * 50), 0, (r() - 0.5) * L); k.rotation.y = r() * 0.6; g.add(k);
+      }
     }
     if (B.dag && r() < B.dag * 0.6) {
       const s = B.karli || B.spil ? -1 : sideSign();
@@ -326,6 +339,31 @@ export function buildWorld(scene) {
     const denizde = W.biyom === 'deniz';
     W.mavna.visible = denizde;
     if (denizde) { W.mavna.position.y = Math.sin(t * 0.9) * 0.08; W.mavna.rotation.z = Math.sin(t * 0.7) * 0.012; }
+  };
+
+  // modeller/ klasöründeki yapı modelleri: ev-*.glb (köy/şehir evleri), kadirga.glb (deniz geçişi gemisi)
+  W.loadModels = async () => {
+    let list = [];
+    try { list = (await (await fetch('/api/models')).json()).models || []; } catch {}
+    const istenen = list.filter((f) => /^(ev(-\d+)?|kadirga)\.(glb|gltf)$/i.test(f));
+    if (!istenen.length) return;
+    const { GLTFLoader } = await import('three/addons/loaders/GLTFLoader.js');
+    const loader = new GLTFLoader();
+    for (const f of istenen.sort()) {
+      try {
+        const gl = await loader.loadAsync('/modeller/' + encodeURIComponent(f));
+        gl.scene.traverse((k) => { if (k.isMesh) { k.castShadow = true; k.receiveShadow = true; } });
+        if (/^kadirga/i.test(f)) YAPI_GLB.kadirga = gl.scene; else YAPI_GLB.ev.push(gl.scene);
+        console.log(`[model] ${f} yüklendi`);
+      } catch (e) { console.warn('[model] yüklenemedi:', f, e); }
+    }
+    if (YAPI_GLB.kadirga) { // alayın altındaki mavna yerine kadırga
+      for (const c of [...mavna.children]) mavna.remove(c);
+      const k = YAPI_GLB.kadirga.clone(); k.traverse((o) => { if (o.isMesh) o.castShadow = false; });
+      mavna.add(k);
+    }
+    for (const c of W.chunks.values()) scene.remove(c); // yeni modellerle parçaları yeniden kur
+    W.chunks.clear();
   };
 
   // gün döngüsü: 0 sabah … 0.5 öğle … 0.75 gün batımı … 0.9 gece
