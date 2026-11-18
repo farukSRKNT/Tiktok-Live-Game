@@ -340,7 +340,7 @@ export function createUI(G, camera, alay, hooks) {
     el.className = 'tsonuc ' + (k.bul.length ? 'ok' : 'yok');
     el.textContent = `${k.user.nick}: "${k.text}" → ` + (k.bul.length ? 'algılandı: ' + k.bul.join(', ') : 'komut yok (sadece yorum, balon çıkar)');
   });
-  const KOMUTLAR = [['👋 selam', 'selam'], ['📣 çok yaşa', 'Padişahım çok yaşa'], ['🤸 hop', 'hop'], ['🥁 mehter', 'mehter'], ['💨 hızlan', 'hızlan'],
+  const KOMUTLAR = [['👋 selam', 'selam'], ['📣 çok yaşa', 'Padişahım çok yaşa'], ['🤸 hop', 'hop'], ['🚩 sancak', 'sancak'], ['🥁 mehter', 'mehter'], ['🐎 sipahi', 'sipahi'], ['👑 musahip', 'musahip'], ['⚔️ yeniçeri', 'yeniçeri'], ['"Sipahİ olcam"', 'Sipahİ olcam'], ['💨 hızlan', 'hızlan'],
     ['"SELAMMM"', 'SELAMMM'], ['cok yasa', 'cok yasa'], ['"hop" 🙂', '"HOP" 🙂'], ['💬 düz yorum', 'Ne güzel manzara']];
   $('tKomut').innerHTML = KOMUTLAR.map(([l], i) => `<button data-k="${i}" title="${esc(KOMUTLAR[i][1])}">${esc(l)}</button>`).join('');
   $('tKomut').querySelectorAll('[data-k]').forEach((b) => { b.onclick = () => { yorum(KOMUTLAR[+b.dataset.k][1]); }; });

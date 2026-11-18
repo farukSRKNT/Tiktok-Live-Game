@@ -73,11 +73,33 @@ export function createGame(alay) {
   function rolVer(u, rol) {
     if (u.rol === rol) { u.autoRole = false; return; }
     if (alay.sayi(rol) >= ROL[rol].max) {
-      const aday = alay.uyeler.filter((x) => x.rol === rol && x !== u).sort((a, b) => (b.autoRole - a.autoRole) || (a.rolT - b.rolT))[0];
-      if (aday) { aday.autoRole = false; alay.ekle(aday, 'yeniceri'); aday.rolT = G.time; }
+      // önce yorumla/otomatik gelenin, sonra en eski hediyecinin yerini alır
+      const aday = alay.uyeler.filter((x) => x.rol === rol && x !== u).sort((a, b) => (!!a.hediyeRol - !!b.hediyeRol) || (b.autoRole - a.autoRole) || (a.rolT - b.rolT))[0];
+      if (aday) { aday.autoRole = false; aday.hediyeRol = false; alay.ekle(aday, 'yeniceri'); aday.rolT = G.time; }
     }
     if (u.rol) alay.ekle(u, rol); else { alay.ekle(u, rol); u.welcomeT = G.time; }
-    u.autoRole = false; u.rolT = G.time;
+    u.autoRole = false; u.rolT = G.time; u.hediyeRol = true;
+  }
+
+  // Yorumla rol (hediyesiz oynanabilsin): kişi başı 30 sn bekleme. Hediyeyle alınmış yer elden alınamaz.
+  const ROL_BEKLE = 30;
+  const ROL_IKON = { sancak: '🚩', mehter: '🥁', sipahi: '🐎', musahip: '👑', yeniceri: '⚔️' };
+  function rolKomut(u, rol) {
+    const ad = ROL[rol].ad.toLocaleLowerCase('tr'), ik = ROL_IKON[rol];
+    if (u.rol === rol) return `${ik} ${ad} (zaten ${ad})`;
+    const kalan = Math.ceil(ROL_BEKLE - (G.time - (u.yorumRolT ?? -99)));
+    if (kalan > 0) return `${ik} ${ad} (${kalan} sn bekle)`;
+    if (u.hediyeRol && G.time - u.rolT < 120) return `${ik} ${ad} (hediyeyle aldığı rolü 2 dk bırakamaz)`;
+    if (rol !== 'yeniceri' && alay.sayi(rol) >= ROL[rol].max) {
+      const aday = alay.uyeler.filter((x) => x.rol === rol && !x.hediyeRol && G.time - (x.rolT || 0) > ROL_BEKLE).sort((a, b) => (b.autoRole - a.autoRole) || (a.rolT - b.rolT))[0];
+      if (!aday) return `${ik} ${ad} (yer dolu, hediyeyle alınabilir)`;
+      aday.autoRole = false; alay.ekle(aday, 'yeniceri'); aday.rolT = G.time;
+      G.emit('announce', `${ik} ${u.nick}, ${aday.nick}'in yerine geçti!`);
+    } else G.emit('announce', rol === 'yeniceri' ? `⚔️ ${u.nick} yeniçeri saflarına döndü` : `${ik} ${u.nick} artık ${ad}!`);
+    alay.ekle(u, rol);
+    u.autoRole = false; u.hediyeRol = false; u.rolT = G.time; u.yorumRolT = G.time;
+    G.emit('chipHit', 'rol');
+    return `${ik} ${ad} ✓`;
   }
 
   // ---------- olaylar ----------
@@ -136,10 +158,9 @@ export function createGame(alay) {
     // harita yorumla açılmaz: sadece yayıncı (kontrol paneli düğmesi / M tuşu)
     if (has(t, 'hizlan', 'hizli', 'kos', 'dortnala', 'cabuk')) { G.addEnergy(2); G.emit('chipHit', 'begen'); bul.push('💨 hızlan'); }
     if (has(t, 'zipla', 'hop')) { u.ziplaT = G.time; G.emit('chipHit', 'hop'); bul.push('🤸 zıpla'); }
-    if (has(t, 'mehter')) {
-      if (u.rol === 'yeniceri' && alay.sayi('mehter') < ROL.mehter.max) { alay.ekle(u, 'mehter'); G.emit('announce', `🥁 ${u.nick} mehter takımına geçti!`); bul.push('🥁 mehter'); }
-      else bul.push(u.rol === 'mehter' ? '🥁 mehter (zaten mehter)' : u.rol !== 'yeniceri' ? '🥁 mehter (rolü var, değişmez)' : '🥁 mehter (takım dolu)');
-    }
+    const rolIstek = has(t, 'sancak', 'bayrak') ? 'sancak' : has(t, 'mehter', 'davul', 'zurna') ? 'mehter' : has(t, 'sipahi', 'atli', 'ata bin') ? 'sipahi'
+      : has(t, 'musahip') ? 'musahip' : has(t, 'yeniceri', 'yaya') ? 'yeniceri' : null;
+    if (rolIstek) bul.push(rolKomut(u, rolIstek));
     G.emit('komut', { user: u, text, bul });
   }
 
