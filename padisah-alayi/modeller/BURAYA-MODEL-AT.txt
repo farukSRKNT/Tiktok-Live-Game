@@ -1,0 +1,15 @@
+Kendi 3B modellerini (.glb) bu klasöre at, sayfayı yenile. Varsa kodla yapılmış figürlerin yerine geçer.
+
+Dosya adları:
+  padisah.glb   Kanuni Sultan Süleyman (atıyla birlikte)
+  ibrahim.glb   İbrahim Paşa (atıyla birlikte)
+  yeniceri.glb  yürüyen yeniçeri (izleyiciler)
+  mehter.glb    mehter
+  sancak.glb    sancaktar
+  musahip.glb   padişahın yanında yürüyen
+  sipahi.glb    atlı sipahi
+
+Model içinde yürüme animasyonu varsa (adında walk / yuru / ride geçen) otomatik oynar.
+Boyu otomatik ayarlanır. Yanlış durursa bu klasöre ayar.json koy:
+  { "padisah": { "boy": 3.2, "y": 0, "don": 180 } }
+boy: metre cinsinden yükseklik, y: yukarı/aşağı kaydırma, don: derece cinsinden döndürme.

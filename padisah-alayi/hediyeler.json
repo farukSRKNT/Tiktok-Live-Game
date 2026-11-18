@@ -1,0 +1,19 @@
+{
+  "_aciklama": [
+    "Padişah Alayı hediye kuralları. Kaydedip sayfayı yenilemen yeterli.",
+    "eylem (değiştirme): sancak | mehter | sipahi | musahip | altin | dortnala | senlik",
+    "etiket: ekranda görünen ad. jeton: hediyenin jeton değeri. minJeton: bu değer ve üstü (listede olmayan) her hediye.",
+    "ikon: emoji (gerçek hediye resmi öğrenilince o görünür).",
+    "ad / id: TikTok'taki hediye adı / ID'si (kontrol panelindeki 'Hediye kaydı'ndan bak). Boşsa sadece jeton değerine göre eşleşir.",
+    "Yorum yazan ya da beğenen herkes alaya yeniçeri olarak katılır. İlk gelenler mehter ve sancaktar olur; hediye atan onların yerini alır."
+  ],
+  "kurallar": [
+    { "eylem": "sancak",   "etiket": "Sancaktar Ol",           "jeton": 1,    "ikon": "🌹", "ad": ["Rose", "Gül"], "id": ["5655"] },
+    { "eylem": "mehter",   "etiket": "Mehter Ol",              "jeton": 10,   "ikon": "🥁", "ad": [], "id": [] },
+    { "eylem": "sipahi",   "etiket": "Atlı Sipahi Ol",         "jeton": 30,   "ikon": "🐎", "ad": [], "id": [] },
+    { "eylem": "altin",    "etiket": "Altın Saçtır",           "jeton": 50,   "ikon": "💰", "ad": [], "id": [] },
+    { "eylem": "musahip",  "etiket": "Padişahın Yanında Yürü", "jeton": 99,   "ikon": "👑", "ad": [], "id": [] },
+    { "eylem": "dortnala", "etiket": "Dörtnala!",              "jeton": 199,  "ikon": "💨", "ad": [], "id": [] },
+    { "eylem": "senlik",   "etiket": "Şenlik Ateşi",           "minJeton": 1000, "ikon": "🎆", "ad": [], "id": [] }
+  ]
+}

@@ -1,0 +1,183 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Padişah Alayı</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🐎</text></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@600;700;800;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+<style>
+  :root{--bg:#120d08;--panel:#1c150f;--panel2:#2a2016;--line:#3a2d1f;--text:#f4ead8;--mute:#b8a68a}
+  #cv,#ov,#map{position:absolute;left:0;top:0;width:1080px;height:1920px;display:block}
+  #ov,#map{pointer-events:none}
+  /* köşe taşları: üstte güzergâh şeridi */
+  #yol{position:absolute;left:30px;right:30px;top:230px;padding:14px 26px 16px;border-radius:26px;background:rgba(40,22,10,.8);border:3px solid rgba(232,194,90,.7);color:#fff;pointer-events:none;transition:opacity .5s}
+  #yolUst{display:flex;justify-content:space-between;align-items:baseline;font-weight:900;font-size:28px}
+  #yolUst b{color:#ffd56a}
+  #yolSefer{font-size:22px;color:#e8d3a8}
+  #serit{position:relative;height:46px;margin-top:8px}
+  #serit .hat{position:absolute;left:0;right:0;top:20px;height:6px;border-radius:9px;background:rgba(255,255,255,.18)}
+  #serit .dolu{position:absolute;left:0;top:20px;height:6px;border-radius:9px;background:linear-gradient(90deg,#b3122e,#ff5c5c)}
+  #serit .tas{position:absolute;top:13px;width:20px;height:20px;margin-left:-10px;border-radius:5px;background:#e8dcc4;border:3px solid #5a3a1e;transform:rotate(45deg)}
+  #serit .tas.gecti{background:#ffd56a}
+  #serit .tas.buyuk{width:26px;height:26px;margin-left:-13px;top:10px}
+  #serit .biz{position:absolute;top:-2px;font-size:38px;margin-left:-22px;filter:drop-shadow(0 2px 4px rgba(0,0,0,.6));transition:left .5s linear}
+  #yolAlt{display:flex;justify-content:space-between;font-size:20px;font-weight:800;color:#e8d3a8;margin-top:2px}
+  /* durak kartı */
+  #durak{position:absolute;left:50%;top:420px;transform:translateX(-50%);width:900px;pointer-events:none}
+  .dk{display:flex;gap:24px;align-items:center;padding:22px 30px;border-radius:30px;background:linear-gradient(160deg,#f6e7c4,#e3c58c);color:#3a2410;border:5px solid #7a4a1e;box-shadow:0 18px 60px rgba(0,0,0,.45),inset 0 0 0 3px #e8c25a;animation:dkIn .7s cubic-bezier(.2,1.4,.4,1)}
+  .dk-ic{font-size:96px;line-height:1}
+  .dk-ad{font-size:58px;font-weight:900;line-height:1}
+  .dk-alt{font-size:28px;font-weight:800;color:#8a2a1a;margin-top:4px}
+  .dk-b{font-size:25px;font-weight:700;margin-top:8px;line-height:1.25}
+  .dk-km{font-size:22px;font-weight:900;margin-top:8px;display:inline-block;background:#5a3a1e;color:#ffe9b0;padding:4px 14px;border-radius:99px}
+  #durak.off .dk{opacity:0;transform:translateY(-20px) scale(.95);transition:all .5s}
+  @keyframes dkIn{from{opacity:0;transform:translateY(-40px) scale(.9)}to{opacity:1;transform:none}}
+  #announce{top:760px} #banner{top:850px}
+  #buyuk{position:absolute;left:50%;top:560px;transform:translateX(-50%);width:960px;pointer-events:none}
+  #buyuk .bk{padding:34px 40px;border-radius:40px;text-align:center;background:linear-gradient(160deg,rgba(179,18,46,.95),rgba(120,20,30,.95));color:#fff;border:5px solid #e8c25a;box-shadow:0 20px 80px rgba(0,0,0,.5);animation:dkIn .8s cubic-bezier(.2,1.4,.4,1)}
+  #buyuk .bk h2{margin:0;font-size:70px;line-height:1.05}
+  #buyuk .bk p{margin:10px 0 0;font-size:30px;font-weight:800;color:#ffe2a0}
+  #buyuk .bk ol{list-style:none;padding:0;margin:18px 0 0;font-size:34px;font-weight:900}
+  #buyuk.off .bk{opacity:0;transform:scale(.9);transition:all .5s}
+  /* etkileşim sütunları */
+  .col{position:absolute;top:960px;width:290px;display:flex;flex-direction:column;gap:9px;pointer-events:none;transition:opacity .5s}
+  #colL{left:12px} #colR{right:12px}
+  body.harita .col, body.harita #yol{opacity:0}
+  .col-h{font-weight:900;font-size:24px;color:#fff;background:rgba(40,22,10,.82);border:2px solid rgba(232,194,90,.6);border-radius:18px;padding:7px 12px;text-align:center}
+  .chip{display:flex;align-items:center;gap:10px;background:rgba(40,22,10,.74);border:2px solid rgba(255,215,130,.3);border-radius:18px;padding:6px 12px;color:#fff;backdrop-filter:blur(6px);transition:background .4s,transform .3s}
+  .chip.hit{background:rgba(232,194,90,.65);transform:scale(1.05)}
+  .ci{font-size:38px;width:50px;height:50px;display:flex;align-items:center;justify-content:center;line-height:1;flex-shrink:0}
+  .ci img{width:50px;height:50px;object-fit:contain}
+  .ct{display:flex;flex-direction:column;line-height:1.12;min-width:0}
+  .ct b{font-size:22px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .ct small{font-size:17px;color:#ffd56a;font-weight:800}
+  #hizKart{display:flex;align-items:center;gap:10px;padding:8px 12px;border-radius:18px;background:rgba(40,22,10,.82);border:2px solid rgba(232,194,90,.5);color:#fff}
+  #hizKart .ci{font-size:40px}
+  #hizBar{height:10px;border-radius:9px;background:rgba(255,255,255,.15);overflow:hidden;margin-top:4px;width:170px}
+  #hizBar i{display:block;height:100%;width:0;background:linear-gradient(90deg,#9ee37d,#f6c453,#ff9f43,#ff4f7b);background-size:170px 100%;transition:width .3s}
+  .col .card{position:relative;left:auto;right:auto;top:auto;width:auto;padding:12px 14px}
+  .col .card-title{font-size:23px}
+  .col ol{list-style:none;margin:0;padding:0}
+  .col ol li{display:flex;align-items:center;gap:6px;padding:4px 0;font-size:20px;font-weight:800}
+  .col ol .rk{width:30px;text-align:center}
+  .col ol .nm{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .col ol .dm{color:#a9dcff;font-size:16px}
+  .col ol .empty{color:#e8d8bd;font-size:19px}
+  /* hediye listesi TikTok'un kendi menüsünde görünüyor: sağ sütunda gizli (istersen bu satırı sil) */
+  #colR .col-h, #giftChips{display:none}
+  .bn.auto{background:linear-gradient(135deg,rgba(232,170,40,.97),rgba(42,120,80,.95));box-shadow:0 16px 60px rgba(246,196,83,.5),inset 0 0 0 4px rgba(255,255,255,.35)}
+  .bn.auto .bn-g{font-size:36px;font-weight:900}
+  .bn{background:linear-gradient(135deg,rgba(179,18,46,.96),rgba(200,120,40,.96))}
+</style>
+<script type="importmap">{ "imports": { "three": "/three/build/three.module.js", "three/addons/": "/three/examples/jsm/" } }</script>
+</head>
+<body>
+<header id="topbar">
+  <div class="brand"><span>🐎</span><span>Padişah<b>Alayı</b></span></div>
+  <div class="pill" id="statusPill"><i class="dot"></i><span id="statusText">DEMO</span></div>
+  <div class="stats">
+    <span class="stat" title="İzleyici">👁 <b id="stViewers">0</b></span>
+    <span class="stat" title="Beğeni">❤️ <b id="stLikes">0</b></span>
+    <span class="stat" title="Toplam elmas">💎 <b id="stDiamonds">0</b></span>
+    <span class="stat" title="Alaydaki kişi">⚔️ <b id="stAlay">0</b></span>
+  </div>
+  <div class="actions">
+    <button id="btnSound" class="btn gold">🥁 Mehteri başlat</button>
+    <button id="btnNext" class="btn" title="Sonraki parça" hidden>⏭</button>
+    <button id="btnMap" class="btn" title="Haritayı göster (M)">🗺️ Harita</button>
+    <button id="btnClean" class="btn" title="Sadece sahneyi göster (H)">🎬 Yayın modu</button>
+    <button id="btnFull" class="btn" title="Tam ekran">⛶</button>
+  </div>
+</header>
+
+<main id="layout">
+  <section id="stageWrap">
+    <div id="stage">
+      <canvas id="cv"></canvas>
+      <canvas id="ov"></canvas>
+      <canvas id="map"></canvas>
+      <div id="yol">
+        <div id="yolUst"><span id="yolSefer">İstanbul → Manisa</span><span>Sıradaki: <b id="yolSonraki">Üsküdar</b> · <b id="yolKalan">0 km</b></span></div>
+        <div id="serit"><div class="hat"></div><div class="dolu" id="seritDolu"></div><div id="seritTaslar"></div><div class="biz" id="seritBiz">🐎</div></div>
+        <div id="yolAlt"><span id="yolBas">İstanbul</span><span id="yolKm">0 / 462 km</span><span id="yolSon">Manisa</span></div>
+      </div>
+      <div id="durak" class="off"></div>
+      <div id="colL" class="col">
+        <div class="col-h">💬 Yorum yaz, alaya katıl</div>
+        <div class="chip" data-chip="yorum"><span class="ci">⚔️</span><span class="ct"><b>Yorum yaz</b><small>yeniçeri ol</small></span></div>
+        <div class="chip" data-chip="begen"><span class="ci">❤️</span><span class="ct"><b>Beğen</b><small>alay hızlansın</small></span></div>
+        <div class="chip" data-chip="yasa"><span class="ci">📣</span><span class="ct"><b>çok yaşa</b><small>alay coşsun</small></span></div>
+        <div class="chip" data-chip="selam"><span class="ci">👋</span><span class="ct"><b>selam</b><small>padişah selamlasın</small></span></div>
+        <div class="chip" data-chip="harita"><span class="ci">🗺️</span><span class="ct"><b>nerdeyiz</b><small>haritayı aç</small></span></div>
+        <div id="hizKart"><span class="ci">🐎</span><div><b id="hizAd" style="font-size:22px">Ağır yürüyüş</b><div id="hizBar"><i id="hizBarI"></i></div></div></div>
+      </div>
+      <div id="colR" class="col">
+        <div class="col-h">🎁 Hediye at</div>
+        <div id="giftChips"></div>
+        <div class="card">
+          <div class="card-title">🏆 Cömertler</div>
+          <ol id="boardList"></ol>
+        </div>
+        <div class="card">
+          <div class="card-title">🥾 En çok yürüyen</div>
+          <ol id="walkList"></ol>
+        </div>
+      </div>
+      <div id="announce"></div>
+      <div id="banner"></div>
+      <div id="buyuk" class="off"></div>
+    </div>
+  </section>
+
+  <aside id="side">
+    <div class="panel">
+      <div class="panel-h">📡 TikTok bağlantısı</div>
+      <form id="liveForm" class="row2" autocomplete="off">
+        <input id="liveUser" placeholder="@kullaniciadi" maxlength="40">
+        <button id="liveBtn" class="go">Bağlan</button>
+      </form>
+      <p class="sub" id="liveMsg">Bağlı değil. Yayın açacak hesabın kullanıcı adını yaz.</p>
+    </div>
+    <div class="panel">
+      <div class="panel-h">🐎 Alay hızı <b id="energyPct">0%</b></div>
+      <div class="bar"><i id="energyBar"></i></div>
+      <p class="sub" id="trackInfo"></p>
+      <p class="sub" id="cnt"></p>
+    </div>
+    <div class="panel grow">
+      <div class="panel-h">💬 Canlı akış</div>
+      <ul id="feed"></ul>
+    </div>
+    <div class="panel">
+      <div class="panel-h">🧪 Demo <label class="sw"><input type="checkbox" id="autoDemo" checked><span>Otomatik izleyici</span></label></div>
+      <div class="btns">
+        <button data-demo="join">👥 +5 yorum</button>
+        <button data-demo="yasa">📣 "Çok yaşa"</button>
+        <button data-demo="likes">❤️ +60 beğeni</button>
+        <button data-demo="harita">🗺️ "Nerdeyiz"</button>
+        <button data-demo="ileri">⏩ Sonraki durak</button>
+        <button data-demo="reset">🧹 Sıfırla</button>
+      </div>
+      <div class="btns" id="ruleBtns" style="margin-top:6px"></div>
+      <form id="chatForm" autocomplete="off">
+        <input id="chatName" placeholder="İsim" value="Bilal" maxlength="16">
+        <input id="chatText" placeholder="Yorum… (selam / çok yaşa / nerdeyiz)" maxlength="80">
+        <button>Gönder</button>
+      </form>
+    </div>
+    <div class="panel">
+      <div class="panel-h">🎁 Hediye kaydı <span class="hint">ad · id · jeton → eşleşme</span></div>
+      <ul id="giftLog"><li class="empty">Henüz hediye gelmedi.</li></ul>
+    </div>
+  </aside>
+</main>
+
+<script>window.CD = window.CD || {};</script>
+<script src="js/ses.js"></script>
+<script type="module" src="js/main.js"></script>
+</body>
+</html>
