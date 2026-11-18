@@ -88,6 +88,17 @@
   .tsonuc.ok{color:#9ee3c0;border-color:#2f6b4a}
   .tsonuc.yok{color:#e8d3a8}
   #chatText{flex:1}
+  #alayPanel.modal{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);width:min(900px,92vw);max-height:86vh;z-index:60;box-shadow:0 0 0 100vmax rgba(0,0,0,.6),0 20px 60px rgba(0,0,0,.6);display:flex;flex-direction:column}
+  #alayPanel.modal .panel-h{font-size:18px}
+  #alayPanel.modal #alayListe{max-height:none;flex:1;font-size:16px}
+  #alayPanel.modal #alayListe .rh{font-size:17px;margin-top:10px}
+  #alayListe{max-height:220px;overflow-y:auto;font-size:12px}
+  #alayListe .rg{margin-top:6px}
+  #alayListe .rg:first-child{margin-top:0}
+  #alayListe .rh{font-weight:900;color:#e8d3a8;font-size:12px}
+  #alayListe .rk{display:inline-block;margin:3px 4px 0 0;padding:2px 7px;border-radius:7px;background:var(--panel2);border:1px solid var(--line);font-weight:700}
+  #alayListe .rk i{font-style:normal;color:#a9dcff;margin-left:4px}
+  #alayListe .rk.hd{border-color:#8a6a2a}
 </style>
 <script type="importmap">{ "imports": { "three": "/three/build/three.module.js", "three/addons/": "/three/examples/jsm/" } }</script>
 </head>
@@ -157,6 +168,10 @@
         <button id="liveBtn" class="go">Bağlan</button>
       </form>
       <p class="sub" id="liveMsg">Bağlı değil. Yayın açacak hesabın kullanıcı adını yaz.</p>
+    </div>
+    <div class="panel" id="alayPanel">
+      <div class="panel-h">⚔️ Alay <b id="alaySay">0 kişi</b><button id="alayBuyut" class="tb" title="Büyük pencerede aç">⛶</button></div>
+      <div id="alayListe"><div class="sub">Henüz kimse yok.</div></div>
     </div>
     <div class="panel">
       <div class="panel-h">🐎 Alay hızı <b id="energyPct">0%</b></div>

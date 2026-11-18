@@ -262,6 +262,7 @@ export function createUI(G, camera, alay, hooks) {
       $('cnt').textContent = `⚔️ ${alay.sayi('yeniceri')} yeniçeri · 🥁 ${alay.sayi('mehter')} · 🚩 ${alay.sayi('sancak')} · 🐎 ${alay.sayi('sipahi')} · 👑 ${alay.sayi('musahip')}`;
       seritGuncelle();
       kullaniciListesi();
+      alayListesi();
       const hOn = hooks.director.cur === 'harita';
       $('btnMap').textContent = hOn ? '🗺️ Haritayı kapat' : '🗺️ Harita';
       document.querySelectorAll('[data-shot]').forEach((b) => b.classList.toggle('on', b.dataset.shot === hooks.director.cur));
@@ -308,6 +309,23 @@ export function createUI(G, camera, alay, hooks) {
       hooks.kontrol({ k });
     };
   });
+  // ---------- kontrol paneli: alayda kim, hangi rolde ----------
+  function alayListesi() {
+    const SIRA = [['musahip', '👑 Musahip'], ['sipahi', '🐎 Sipahi'], ['sancak', '🚩 Sancaktar'], ['mehter', '🥁 Mehter'], ['yeniceri', '⚔️ Yeniçeri']];
+    const key = alay.uyeler.map((u) => u.id + u.rol + (u.puan || 0)).join('|');
+    if (alayListesi.key === key) return; alayListesi.key = key;
+    $('alaySay').textContent = `${alay.uyeler.length} kişi`;
+    const html = SIRA.map(([r, ad]) => {
+      const l = alay.uyeler.filter((u) => u.rol === r).sort((a, b) => (b.puan || 0) - (a.puan || 0));
+      if (!l.length) return '';
+      return `<div class="rg"><div class="rh">${ad} (${l.length})</div>${l.map((u) => `<span class="rk${u.hediyeRol ? ' hd' : ''}" title="${u.hediyeRol ? 'hediyeyle aldı' : u.autoRole ? 'ilk gelenlerden' : 'yorumla aldı'}">${esc(u.nick)}${u.puan ? `<i>${fmt(u.puan)}💎</i>` : ''}</span>`).join('')}</div>`;
+    }).join('');
+    $('alayListe').innerHTML = html || '<div class="sub">Henüz kimse yok.</div>';
+  }
+
+  $('alayBuyut').onclick = () => { const on = $('alayPanel').classList.toggle('modal'); $('alayBuyut').textContent = on ? '✕' : '⛶'; };
+  addEventListener('keydown', (e) => { if (e.key === 'Escape' && $('alayPanel').classList.contains('modal')) $('alayBuyut').click(); });
+
   // ---------- test masası ----------
   const BEN = { id: 'test_faruk', nick: 'Faruk' };
   let secili = BEN;
