@@ -58,7 +58,19 @@ const post = (url, body) => fetch(url, { method: 'POST', headers: { 'Content-Typ
 live.connect = (u) => post('/api/connect', { username: u });
 live.disconnect = () => post('/api/disconnect');
 
+const SSE = location.protocol !== 'file:' && !!window.EventSource;
+// test masası / demo olayları sunucu üzerinden gider: panel ve sahne penceresi aynı şeyi görür
+G.yolla = (ev) => (SSE ? post('/api/test', ev) : G.handle(ev));
+function kontrol(ev) {
+  if (ev.k === 'harita') director.toggleHarita();
+  else if (ev.k === 'kamera') director.focusOn(ev.shot, 10);
+  else demo.act(ev.k); // ileri, varis
+}
+function sifirlaYerel() { G.reset(); document.getElementById('feed').innerHTML = ''; G.emit('durak', DURAKLAR[0]); }
+
 const UI = createUI(G, camera, alay, {
+  kontrol: (ev) => (SSE ? post('/api/test', { type: 'kontrol', ...ev }) : kontrol(ev)),
+  sifirla: () => (SSE ? post('/api/sifirla') : sifirlaYerel()),
   onQuality: setQuality, demo, live,
   onFocus: (name) => director.focusOn(name, name === 'harita' ? 16 : 6),
   onNext: () => director.next(),
@@ -73,13 +85,23 @@ fetch('/api/rules').then((r) => r.json()).then((j) => { if (Array.isArray(j.kura
 UI.renderRuleButtons();
 alay.loadModels();
 
-if (location.protocol !== 'file:' && window.EventSource) {
+// kaldığı yerden devam: sunucudaki son durumu yükle, sonra birkaç saniyede bir kaydet
+let kayitHazir = !SSE;
+if (SSE) {
+  fetch('/api/durum').then((r) => r.json()).then((d) => { if (G.yukle(d)) console.log('[durum] kaldığı yerden devam:', d.uyeler.length, 'kişi'); })
+    .catch(() => {}).finally(() => { kayitHazir = true; });
+  setInterval(() => { if (kayitHazir) post('/api/durum', G.kaydet()); }, 4000);
+  addEventListener('pagehide', () => { if (kayitHazir) navigator.sendBeacon('/api/durum', new Blob([JSON.stringify(G.kaydet())], { type: 'application/json' })); });
+
   demo.paused = true;
   setTimeout(() => { demo.paused = false; }, 3000);
   const es = new EventSource('/api/events');
   es.onmessage = (e) => {
     let ev; try { ev = JSON.parse(e.data); } catch { return; }
     if (ev.type === 'status') { live.status = ev.status; UI.setLive(ev.status); demo.paused = false; return; }
+    if (ev.type === 'kontrol') return kontrol(ev);
+    if (ev.type === 'sifirla') return sifirlaYerel();
+    if (!kayitHazir) return; // durum yüklenmeden gelen olay kaydı bozmasın
     G.handle(ev);
   };
 }

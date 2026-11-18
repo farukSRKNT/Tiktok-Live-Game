@@ -133,12 +133,9 @@ export function createGame(alay) {
         G.fx.push({ type: 'yasa', at: u });
       } else { const U = u.ch && (u.ch.userData.binici || u.ch.userData); if (U) U.cosT = G.time; }
     }
-    if (has(t, 'harita', 'nerde', 'nerede', 'neredeyiz', 'nerdeyiz', 'konum')) {
-      G.emit('chipHit', 'harita'); bul.push(G.time - G.haritaT > 40 ? '🗺️ harita' : '🗺️ harita (40 sn bekleme)');
-      if (G.time - G.haritaT > 40) { G.haritaT = G.time; G.emit('focus', 'harita'); }
-    }
+    // harita yorumla açılmaz: sadece yayıncı (kontrol paneli düğmesi / M tuşu)
     if (has(t, 'hizlan', 'hizli', 'kos', 'dortnala', 'cabuk')) { G.addEnergy(2); G.emit('chipHit', 'begen'); bul.push('💨 hızlan'); }
-    if (has(t, 'zipla', 'hop')) { u.ziplaT = G.time; bul.push('🤸 zıpla'); }
+    if (has(t, 'zipla', 'hop')) { u.ziplaT = G.time; G.emit('chipHit', 'hop'); bul.push('🤸 zıpla'); }
     if (has(t, 'mehter')) {
       if (u.rol === 'yeniceri' && alay.sayi('mehter') < ROL.mehter.max) { alay.ekle(u, 'mehter'); G.emit('announce', `🥁 ${u.nick} mehter takımına geçti!`); bul.push('🥁 mehter'); }
       else bul.push(u.rol === 'mehter' ? '🥁 mehter (zaten mehter)' : u.rol !== 'yeniceri' ? '🥁 mehter (rolü var, değişmez)' : '🥁 mehter (takım dolu)');
@@ -270,6 +267,28 @@ export function createGame(alay) {
     G.users.clear(); G.scores.clear(); G.top = []; G.yuruyenler = [];
     G.s = 0; G.dir = 1; G.sefer = 1; G.durum = 'yol'; G.energy = 0; G.likes = 0; G.diamonds = 0; G.sonDurak = 0;
     G.emit('board'); G.emit('walkers');
+  };
+  // ---------- durum kaydı (F5 / yeniden açılışta kaldığı yerden) ----------
+  G.kaydet = () => ({
+    v: 1, t: Date.now(), s: G.s, dir: G.dir, sefer: G.sefer, durum: G.durum, energy: G.energy, likes: G.likes, diamonds: G.diamonds, sonDurak: G.sonDurak,
+    scores: [...G.scores.values()],
+    uyeler: [...alay.uyeler].sort((a, b) => (a.joinT ?? 0) - (b.joinT ?? 0)).map((u) => ({ id: u.id, nick: u.nick, rol: u.rol, puan: u.puan || 0, km: u.km || 0, autoRole: !!u.autoRole, gifted: !!u.gifted, sessiz: G.time - u.lastAct })),
+  });
+  G.yukle = (d) => {
+    if (!d || d.v !== 1) return false;
+    G.reset();
+    Object.assign(G, { s: d.s || 0, dir: d.dir || 1, sefer: d.sefer || 1, durum: 'yol', energy: d.energy || 0, likes: d.likes || 0, diamonds: d.diamonds || 0, sonDurak: d.sonDurak ?? 0 });
+    if (d.durum === 'varis') { G.durum = 'varis'; G.varisT = G.time - 25; }
+    for (const sc of d.scores || []) G.scores.set(sc.id, { ...sc });
+    (d.uyeler || []).forEach((x, i) => {
+      const u = { id: x.id, nick: x.nick, km: x.km, puan: x.puan, autoRole: x.autoRole, gifted: x.gifted, joinT: G.time - 1000 + i * 0.01, lastAct: G.time - (x.sessiz || 0), rolT: 0 };
+      G.users.set(u.id, u);
+      alay.ekle(u, x.rol || 'yeniceri');
+    });
+    alay.dizil();
+    for (const u of alay.uyeler) if (u.ch && u.hedef) u.ch.position.copy(u.hedef); // koşarak gelmesin, yerinde başlasın
+    ranks(); G.emit('walkers');
+    return true;
   };
   G.durakBilgi = () => {
     const [a, b] = aralik(G.s);

@@ -289,18 +289,25 @@ export function createUI(G, camera, alay, hooks) {
   if (qs.get('ses') === '1') { const auto = () => { if (!A.on) toggleSound(); }; setTimeout(auto, 900); addEventListener('pointerdown', auto, { once: true }); }
   const toggleClean = () => { document.body.classList.toggle('clean'); requestAnimationFrame(UI.fit); };
   $('btnClean').onclick = toggleClean;
-  $('btnMap').onclick = () => hooks.onMap();
+  $('btnReset').onclick = () => { if (confirm('Her şey sıfırlansın mı?\nAlaydaki herkes, roller, hediye sıralaması ve yolculuk baştan başlar.')) hooks.sifirla(); };
+  $('btnMap').onclick = () => hooks.kontrol({ k: 'harita' });
   $('btnFull').onclick = () => { if (document.fullscreenElement) document.exitFullscreen(); else document.documentElement.requestFullscreen().catch(() => {}); };
   addEventListener('keydown', (e) => {
     if (e.target.tagName === 'INPUT') return;
     if (e.key === 'h' || e.key === 'H') toggleClean();
-    if (e.key === 'm' || e.key === 'M') hooks.onMap();
+    if (e.key === 'm' || e.key === 'M') hooks.kontrol({ k: 'harita' });
     if (e.key === 'n' || e.key === 'N') hooks.onNext();
   });
   if (qs.has('clean')) document.body.classList.add('clean');
   if (qs.get('demo') === '1') { $('autoDemo').checked = true; hooks.demo.on = true; }
   $('autoDemo').onchange = (e) => { hooks.demo.on = e.target.checked; };
-  document.querySelectorAll('[data-demo]').forEach((b) => { b.onclick = () => hooks.demo.act(b.dataset.demo); });
+  document.querySelectorAll('[data-demo]').forEach((b) => {
+    b.onclick = () => {
+      const k = b.dataset.demo;
+      if (k === 'reset') { if (confirm('Her şey sıfırlansın mı?\nAlaydaki herkes, roller, hediye sıralaması ve yolculuk baştan başlar.')) hooks.sifirla(); return; }
+      hooks.kontrol({ k });
+    };
+  });
   // ---------- test masası ----------
   const BEN = { id: 'test_faruk', nick: 'Faruk' };
   let secili = BEN;
@@ -317,12 +324,12 @@ export function createUI(G, camera, alay, hooks) {
     sel.value = secili.id;
   }
   $('tUser').onchange = (e) => { const u = G.users.get(e.target.value); secili = u ? { id: u.id, nick: u.nick } : BEN; };
-  const yeniKisi = (nick) => { const u = nick ? { id: 'test_' + nick.toLocaleLowerCase('tr').replace(/\s+/g, '_'), nick } : hooks.demo.absent(); G.handle({ type: 'chat', user: u, text: 'Merhaba!' }); secili = { id: u.id, nick: u.nick }; kullaniciListesi(); $('tUser').value = u.id; };
+  const yeniKisi = (nick) => { const u = nick ? { id: 'test_' + nick.toLocaleLowerCase('tr').replace(/\s+/g, '_'), nick } : hooks.demo.absent(); G.yolla({ type: 'chat', user: u, text: 'Merhaba!' }); secili = { id: u.id, nick: u.nick }; kullaniciListesi(); $('tUser').value = u.id; };
   $('tYeni').onclick = () => yeniKisi();
   $('tYeni5').onclick = () => { for (let i = 0; i < 5; i++) setTimeout(() => yeniKisi(), i * 200); };
   $('tAdEkle').onclick = () => { const n = $('tAd').value.trim(); if (n) { yeniKisi(n); $('tAd').value = ''; } };
   $('tAd').onkeydown = (e) => { if (e.key === 'Enter') { e.preventDefault(); $('tAdEkle').click(); } };
-  const yorum = (t) => G.handle({ type: 'chat', user: kim(), text: t });
+  const yorum = (t) => G.yolla({ type: 'chat', user: kim(), text: t });
   $('chatForm').onsubmit = (e) => {
     e.preventDefault();
     const t = $('chatText').value.trim(); if (!t) return;
@@ -333,21 +340,21 @@ export function createUI(G, camera, alay, hooks) {
     el.className = 'tsonuc ' + (k.bul.length ? 'ok' : 'yok');
     el.textContent = `${k.user.nick}: "${k.text}" → ` + (k.bul.length ? 'algılandı: ' + k.bul.join(', ') : 'komut yok (sadece yorum, balon çıkar)');
   });
-  const KOMUTLAR = [['👋 selam', 'selam'], ['📣 çok yaşa', 'Padişahım çok yaşa'], ['🗺️ nerdeyiz', 'nerdeyiz'], ['🤸 hop', 'hop'], ['🥁 mehter', 'mehter'], ['💨 hızlan', 'hızlan'],
-    ['"SELAMMM"', 'SELAMMM'], ['cok yasa', 'cok yasa'], ['"harita" 🙂', '"harita" 🙂'], ['💬 düz yorum', 'Ne güzel manzara']];
+  const KOMUTLAR = [['👋 selam', 'selam'], ['📣 çok yaşa', 'Padişahım çok yaşa'], ['🤸 hop', 'hop'], ['🥁 mehter', 'mehter'], ['💨 hızlan', 'hızlan'],
+    ['"SELAMMM"', 'SELAMMM'], ['cok yasa', 'cok yasa'], ['"hop" 🙂', '"HOP" 🙂'], ['💬 düz yorum', 'Ne güzel manzara']];
   $('tKomut').innerHTML = KOMUTLAR.map(([l], i) => `<button data-k="${i}" title="${esc(KOMUTLAR[i][1])}">${esc(l)}</button>`).join('');
-  $('tKomut').querySelectorAll('[data-k]').forEach((b) => { b.onclick = () => { if (KOMUTLAR[+b.dataset.k][1] === 'nerdeyiz') G.haritaT = -99; yorum(KOMUTLAR[+b.dataset.k][1]); }; });
+  $('tKomut').querySelectorAll('[data-k]').forEach((b) => { b.onclick = () => { yorum(KOMUTLAR[+b.dataset.k][1]); }; });
   document.querySelectorAll('[data-t]').forEach((b) => {
     b.onclick = () => {
       const k = b.dataset.t, u = kim();
-      if (k.startsWith('like')) G.handle({ type: 'like', user: u, count: +k.slice(4) });
-      else if (k === 'hediye5') G.handle({ type: 'gift', user: u, gift: { name: 'Test hediyesi', id: '', diamonds: 5, count: 1, icon: '🎁' } });
-      else G.handle({ type: k, user: u });
+      if (k.startsWith('like')) G.yolla({ type: 'like', user: u, count: +k.slice(4) });
+      else if (k === 'hediye5') G.yolla({ type: 'gift', user: u, gift: { name: 'Test hediyesi', id: '', diamonds: 5, count: 1, icon: '🎁' } });
+      else G.yolla({ type: k, user: u });
     };
   });
-  const SHOTS = [['padisah', 'Padişah'], ['ibrahim', 'İbrahim'], ['onden', 'Önden'], ['mehter', 'Mehter'], ['yan', 'Yandan'], ['sipahi', 'Sipahi'], ['arka', 'Arkadan'], ['yeniceri', 'Yeniçeri'], ['genis', 'Geniş'], ['harita', '🗺️ Harita']];
+  const SHOTS = [['padisah', 'Padişah'], ['ibrahim', 'İbrahim'], ['onden', 'Önden'], ['mehter', 'İlk sıralar'], ['yan', 'Yandan'], ['sipahi', 'Sipahi'], ['arka', 'Arkadan'], ['yeniceri', 'Yeniçeri'], ['genis', 'Geniş'], ['harita', '🗺️ Harita']];
   $('tKamera').innerHTML = SHOTS.map(([k, l]) => `<button data-shot="${k}">${l}</button>`).join('');
-  $('tKamera').querySelectorAll('[data-shot]').forEach((b) => { b.onclick = () => (b.dataset.shot === 'harita' ? hooks.onMap() : hooks.onShot(b.dataset.shot)); });
+  $('tKamera').querySelectorAll('[data-shot]').forEach((b) => { b.onclick = () => hooks.kontrol(b.dataset.shot === 'harita' ? { k: 'harita' } : { k: 'kamera', shot: b.dataset.shot }); });
   $('liveForm').onsubmit = (e) => {
     e.preventDefault();
     const st = hooks.live.status.state;
@@ -374,7 +381,7 @@ export function createUI(G, camera, alay, hooks) {
     if (st.username && document.activeElement !== $('liveUser')) $('liveUser').value = '@' + st.username;
     // Gerçek yayına İLK bağlanıldığında otomatik sahte izleyiciler durur ve onların kalabalığı temizlenir.
     // "Yayın bekleniyor" durum mesajları (30 sn'de bir gelir) artık hiçbir şeyi silmez; test masasında eklediklerin kalır.
-    if (st.state === 'live' && UI.sonDurum !== 'live' && hooks.demo.on) { hooks.demo.on = false; $('autoDemo').checked = false; G.reset(); $('feed').innerHTML = ''; }
+    if (st.state === 'live' && UI.sonDurum !== 'live' && hooks.demo.on) { hooks.demo.on = false; $('autoDemo').checked = false; }
     UI.sonDurum = st.state;
   };
 

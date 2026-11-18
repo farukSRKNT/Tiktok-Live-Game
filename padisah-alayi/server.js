@@ -65,6 +65,14 @@ else if (OWN_MUSIC) MUSIC_DIR = OWN_MUSIC;
 const IMG_FILE = path.join(__dirname, 'hediye-resimleri.json');
 const readImages = () => { try { return JSON.parse(fs.readFileSync(IMG_FILE, 'utf8')); } catch { return {}; } };
 
+// ---------- oyun durumu (F5'te kaybolmasın) ----------
+// Sayfalar birkaç saniyede bir durumu yollar; açılan sayfa buradan devam eder. Sıfırla düğmesi siler.
+const DURUM_FILE = path.join(__dirname, 'durum.json');
+let durum = null;
+try { durum = JSON.parse(fs.readFileSync(DURUM_FILE, 'utf8')); } catch {}
+let durumYaz = null;
+const durumKaydet = () => { clearTimeout(durumYaz); durumYaz = setTimeout(() => fs.writeFile(DURUM_FILE, JSON.stringify(durum), () => {}), 1000); };
+
 const saveConfig = () => { try { fs.writeFileSync(CONFIG_FILE, JSON.stringify(config, null, 2)); } catch {} };
 
 // ---------- SSE: sayfalara olay yayını ----------
@@ -244,7 +252,7 @@ async function connect(username) {
 function readJson(req) {
   return new Promise((resolve) => {
     let b = '';
-    req.on('data', (c) => { b += c; if (b.length > 1e5) req.destroy(); });
+    req.on('data', (c) => { b += c; if (b.length > 2e6) req.destroy(); });
     req.on('end', () => { try { resolve(JSON.parse(b || '{}')); } catch { resolve({}); } });
   });
 }
@@ -274,6 +282,20 @@ http.createServer(async (req, res) => {
     return json(res, { ok: true });
   }
 
+  if (p === '/api/durum') {
+    if (req.method === 'POST') { const b = await readJson(req); if (b && b.v === 1) { durum = b; durumKaydet(); } return json(res, { ok: true }); }
+    return json(res, durum || {});
+  }
+  if (p === '/api/sifirla' && req.method === 'POST') {
+    durum = null; clearTimeout(durumYaz); fs.unlink(DURUM_FILE, () => {});
+    broadcast({ type: 'sifirla' });
+    return json(res, { ok: true });
+  }
+  if (p === '/api/test' && req.method === 'POST') { // test masası / kontrol: tüm açık sayfalara (sahne penceresi dahil) gider
+    const ev = await readJson(req);
+    if (ev && typeof ev.type === 'string') broadcast(ev);
+    return json(res, { ok: true });
+  }
   if (p === '/api/rules') { // hediyeler.json her istekte okunur: düzenleyip sayfayı yenilemek yeter
     try {
       const data = JSON.parse(fs.readFileSync(path.join(__dirname, 'hediyeler.json'), 'utf8'));
