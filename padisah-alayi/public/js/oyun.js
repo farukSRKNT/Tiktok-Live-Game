@@ -98,7 +98,7 @@ export function createGame(alay) {
     } else G.emit('announce', rol === 'yeniceri' ? `⚔️ ${u.nick} yeniçeri saflarına döndü` : `${ik} ${u.nick} artık ${ad}!`);
     alay.ekle(u, rol);
     u.autoRole = false; u.hediyeRol = false; u.rolT = G.time; u.yorumRolT = G.time;
-    G.emit('chipHit', 'rol');
+    G.emit('chipHit', rol === 'yeniceri' ? 'yorum' : rol);
     return `${ik} ${ad} ✓`;
   }
 
