@@ -310,7 +310,7 @@ export function createUI(G, camera, alay, hooks) {
     const seen = new Set(), opts = [];
     for (const u of list) { if (seen.has(u.id)) continue; seen.add(u.id); opts.push(u); }
     const key = opts.map((u) => u.id + (u.rol || '')).join('|');
-    if (sel.dataset.key === key) return;
+    if (sel.dataset.key === key || document.activeElement === sel) return; // açık listeyi kapatma
     sel.dataset.key = key;
     const ROLAD = { mehter: '🥁', sancak: '🚩', musahip: '👑', sipahi: '🐎', yeniceri: '⚔️' };
     sel.innerHTML = opts.map((u) => `<option value="${esc(u.id)}">${esc(u.nick)}${u.id === BEN.id ? ' (sen)' : ''} ${u.rol ? ROLAD[u.rol] || '' : '· alayda değil'}</option>`).join('');
@@ -372,9 +372,10 @@ export function createUI(G, camera, alay, hooks) {
     const active = st.state !== 'idle';
     $('liveBtn').textContent = active ? 'Kes' : 'Bağlan'; $('liveBtn').classList.toggle('stop', active); $('liveUser').disabled = active;
     if (st.username && document.activeElement !== $('liveUser')) $('liveUser').value = '@' + st.username;
-    const hasDemo = [...G.users.keys()].some((id) => String(id).startsWith('demo_'));
-    if (active && (hooks.demo.on || hasDemo)) { hooks.demo.on = false; $('autoDemo').checked = false; G.reset(); $('feed').innerHTML = ''; }
-    $('autoDemo').disabled = active;
+    // Gerçek yayına İLK bağlanıldığında otomatik sahte izleyiciler durur ve onların kalabalığı temizlenir.
+    // "Yayın bekleniyor" durum mesajları (30 sn'de bir gelir) artık hiçbir şeyi silmez; test masasında eklediklerin kalır.
+    if (st.state === 'live' && UI.sonDurum !== 'live' && hooks.demo.on) { hooks.demo.on = false; $('autoDemo').checked = false; G.reset(); $('feed').innerHTML = ''; }
+    UI.sonDurum = st.state;
   };
 
   renderBoard(); renderWalkers();
