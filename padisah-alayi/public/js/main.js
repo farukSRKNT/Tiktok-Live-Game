@@ -90,8 +90,19 @@ let kayitHazir = !SSE;
 if (SSE) {
   fetch('/api/durum').then((r) => r.json()).then((d) => { if (G.yukle(d)) console.log('[durum] kaldığı yerden devam:', d.uyeler.length, 'kişi'); })
     .catch(() => {}).finally(() => { kayitHazir = true; });
-  setInterval(() => { if (kayitHazir) post('/api/durum', G.kaydet()); }, 4000);
-  addEventListener('pagehide', () => { if (kayitHazir) navigator.sendBeacon('/api/durum', new Blob([JSON.stringify(G.kaydet())], { type: 'application/json' })); });
+  // Tek otorite: yayına verilen sahne penceresi (?clean) durumu kaydeder; kontrol paneli ona uyar.
+  // Sahne penceresi açık değilse (son kayıt 10 sn'den eskiyse) panel kaydeder.
+  const SAHNE = qs.has('clean');
+  setInterval(async () => {
+    if (!kayitHazir) return;
+    if (SAHNE) return post('/api/durum', G.kaydet());
+    try {
+      const d = await (await fetch('/api/durum')).json();
+      if (d && d.v === 1 && Date.now() - d.t < 10000) G.senkron(d);
+      else post('/api/durum', G.kaydet());
+    } catch {}
+  }, 2000);
+  if (SAHNE) addEventListener('pagehide', () => { if (kayitHazir) navigator.sendBeacon('/api/durum', new Blob([JSON.stringify(G.kaydet())], { type: 'application/json' })); });
 
   demo.paused = true;
   setTimeout(() => { demo.paused = false; }, 3000);

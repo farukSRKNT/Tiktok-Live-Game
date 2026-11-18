@@ -311,6 +311,15 @@ export function createGame(alay) {
     ranks(); G.emit('walkers');
     return true;
   };
+  // kontrol paneli, sahne penceresinin durumuna uyar (iki pencere tek oyun gibi)
+  G.senkron = (d) => {
+    if (!d || d.v !== 1) return;
+    const imza = (l) => l.map((x) => x.id + ':' + x.rol + ':' + (x.puan || 0)).sort().join('|');
+    if (imza(d.uyeler || []) !== imza([...alay.uyeler])) { G.yukle(d); return; }
+    if (Math.abs(G.s - d.s) > 3 || G.dir !== d.dir) { G.s = d.s; G.dir = d.dir; }
+    Object.assign(G, { sefer: d.sefer, energy: d.energy, likes: d.likes, diamonds: d.diamonds, sonDurak: d.sonDurak });
+    if (d.durum !== G.durum) { G.durum = d.durum; if (d.durum === 'varis') G.varisT = G.time - 25; }
+  };
   G.durakBilgi = () => {
     const [a, b] = aralik(G.s);
     const sonraki = G.dir > 0 ? DURAKLAR[b] : DURAKLAR[a];
