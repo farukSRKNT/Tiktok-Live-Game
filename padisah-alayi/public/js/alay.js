@@ -207,23 +207,24 @@ export function createAlay(scene) {
   A.root.add(A.padisah, A.ibrahim);
   A.padisahBas = A.padisah.userData.bas; A.ibrahimBas = A.ibrahim.userData.bas;
 
-  // slot konumları (alay -z yönüne yürür; padişah 0,0,0)
-  function slotPos(rol, i, sayilar) {
-    switch (rol) {
-      case 'mehter': return new THREE.Vector3([-1.3, 0, 1.3][i % 3], 0, -8.2 - Math.floor(i / 3) * 1.4);
-      case 'sancak': return new THREE.Vector3(i % 2 ? 1.35 : -1.35, 0, -4.4 - Math.floor(i / 2) * 1.6);
-      case 'musahip': return new THREE.Vector3(i % 2 ? 1.5 : -1.5, 0, 0.6);
-      case 'sipahi': return new THREE.Vector3(i % 2 ? 1.3 : -1.3, 0, 7.2 + Math.floor(i / 2) * 3.2);
-      default: {
-        const sp = Math.ceil(Math.max(0, sayilar.sipahi) / 2);
-        return new THREE.Vector3([-1.3, 0, 1.3][i % 3], 0, 7.4 + sp * 3.2 + Math.floor(i / 3) * 1.3);
-      }
+  // Dizilim: herkes padişah ve İbrahim Paşa'nın ARKASINDA. Hediye toplamı büyük olan en yakında,
+  // hediyesizler en geride (önce gelen önde). Yayalar 3'lü, atlılar 2'li sıra.
+  A.dizil = () => {
+    const sirali = [...A.uyeler].sort((a, b) => (b.puan || 0) - (a.puan || 0) || (a.joinT ?? 0) - (b.joinT ?? 0));
+    let z = 6.2, satir = [], tip = null;
+    const kapat = () => {
+      if (!satir.length) return;
+      const atli = tip === 'atli', xs = atli ? [-1.3, 1.3] : [-1.3, 0, 1.3];
+      const bas = atli && satir.length === 1 ? [0] : satir.length === 1 ? [0] : satir.length === 2 && !atli ? [-0.7, 0.7] : xs;
+      satir.forEach((u, i) => { u.hedef = new THREE.Vector3(bas[i], 0, z + (atli ? 0.6 : 0)); });
+      z += atli ? 3.2 : 1.35; satir = [];
+    };
+    for (const u of sirali) {
+      const t = u.rol === 'sipahi' ? 'atli' : 'yaya';
+      if (t !== tip || satir.length >= (t === 'atli' ? 2 : 3)) { kapat(); tip = t; }
+      satir.push(u);
     }
-  }
-  A.dizil = () => { // rollere göre sıraya koy
-    const say = {}, sira = {};
-    for (const u of A.uyeler) say[u.rol] = (say[u.rol] || 0) + 1;
-    for (const u of A.uyeler) { const i = sira[u.rol] = (sira[u.rol] ?? -1) + 1; u.hedef = slotPos(u.rol, i, say); }
+    kapat();
   };
 
   A.ekle = (u, rol) => {

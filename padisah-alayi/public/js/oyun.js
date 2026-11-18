@@ -19,7 +19,7 @@ const DEFAULT_RULES = [
   { eylem: 'mehter', etiket: 'Mehter Ol', jeton: 10, ikon: '🥁', ad: [], id: [] },
   { eylem: 'sipahi', etiket: 'Atlı Sipahi Ol', jeton: 30, ikon: '🐎', ad: [], id: [] },
   { eylem: 'altin', etiket: 'Altın Saçtır', jeton: 50, ikon: '💰', ad: [], id: [] },
-  { eylem: 'musahip', etiket: 'Padişahın Yanında Yürü', jeton: 99, ikon: '👑', ad: [], id: [] },
+  { eylem: 'musahip', etiket: 'Musahip Ol', jeton: 99, ikon: '👑', ad: [], id: [] },
   { eylem: 'dortnala', etiket: 'Dörtnala!', jeton: 199, ikon: '💨', ad: [], id: [] },
   { eylem: 'senlik', etiket: 'Şenlik Ateşi', minJeton: 1000, ikon: '🎆', ad: [], id: [] },
 ];
@@ -163,6 +163,7 @@ export function createGame(alay) {
     const sc = G.scores.get(u.id) || { id: u.id, nick: u.nick, d: 0 }; sc.d += total; sc.nick = u.nick; G.scores.set(u.id, sc);
     G.addEnergy(Math.min(35, 4 + total * 0.06));
     const m = G.matchRule({ ...gf, diamonds: dia });
+    u.puan = (u.puan || 0) + total; // dizilimde öne geçer
     G.emit('giftlog', { user: u, gift: gf, dia, cnt, match: m });
     G.emit('feed', { kind: 'gift', user: u, text: `${gf.icon || '🎁'} ${gf.name || 'Hediye'} ×${cnt}${m ? ' → ' + m.r.etiket : ''} · ${fmt(total)} 💎` });
     if (m) action(m.r, u, gf, cnt, total);
@@ -171,12 +172,13 @@ export function createGame(alay) {
       if (total >= 100) G.emit('banner', { user: u, gift: gf, count: cnt, total, text: '🎉 Alay alkışlıyor!' });
     }
     G.fx.push({ type: 'konfeti', n: total >= 1000 ? 280 : m ? 140 : total >= 100 ? 120 : 0 });
+    alay.dizil();
     ranks();
   }
 
   const BANNER = {
     sancak: '🚩 Sancağı kaptı!', mehter: '🥁 Mehter takımına katıldı!', sipahi: '🐎 Atlı sipahi oldu!',
-    musahip: '👑 Padişahın yanında yürüyor!', altin: '💰 Padişah halka altın saçtı!', dortnala: '💨 Alay dörtnala!',
+    musahip: '👑 Padişahın musahibi oldu!', altin: '💰 Padişah halka altın saçtı!', dortnala: '💨 Alay dörtnala!',
   };
   function action(r, u, gf, cnt, total) {
     G.emit('ruleHit', r.eylem);
@@ -184,7 +186,7 @@ export function createGame(alay) {
       case 'sancak': case 'mehter': case 'sipahi': case 'musahip':
         rolVer(u, r.eylem);
         G.emit('announce', `${{ sancak: '🚩', mehter: '🥁', sipahi: '🐎', musahip: '👑' }[r.eylem]} ${u.nick} artık ${ROL[r.eylem].ad.toLocaleLowerCase('tr')}!`);
-        G.emit('focus', { sancak: 'onden', mehter: 'mehter', sipahi: 'sipahi', musahip: 'padisah' }[r.eylem]);
+        G.emit('focus', 'mehter');
         break;
       case 'altin':
         G.fx.push({ type: 'altin', n: 40 + Math.min(80, cnt * 20) }); G.addEnergy(6); alay.selam('padisah', G.time);

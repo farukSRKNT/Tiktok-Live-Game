@@ -10,8 +10,8 @@ const smooth = (t) => { t = Math.min(1, Math.max(0, t)); return t * t * (3 - 2 *
 const SHOTS = {
   padisah: (u) => { const a = lerp(0.75, 1.15, u); return { pos: V(Math.sin(a) * 12, 3.2, -Math.cos(a) * 12), look: V(0, 2.2, 0), fov: 24 }; },
   ibrahim: (u) => ({ pos: V(12.5, 3.2, lerp(1.5, 4.5, u)), look: V(1.1, 2.1, 3.4), fov: 24 }),
-  onden: (u) => ({ pos: V(lerp(-2.5, 2.5, u), 3.4, -17), look: V(0, 1.4, -1), fov: 50 }),
-  mehter: (u) => ({ pos: V(lerp(3.5, 2.5, u), 2.4, -16), look: V(0, 1.2, -9), fov: 46 }),
+  onden: (u) => ({ pos: V(lerp(-2.5, 2.5, u), 3.6, -15), look: V(0, 1.6, 3), fov: 50 }),
+  mehter: (u) => ({ pos: V(lerp(5, 4, u), 2.6, lerp(3, 5, u)), look: V(0, 1.5, 9), fov: 44 }), // ilk sıralar (en cömertler)
   yan: (u, P) => ({ pos: V(12, 3.4, lerp(-6, Math.min(P.son, 20) * 0.6, u)), look: V(0, 1.1, lerp(-4, Math.min(P.son, 20) * 0.6 + 2, u)), fov: 50 }),
   sipahi: (u) => ({ pos: V(4.6, 2.8, lerp(4, 10, u)), look: V(0, 2.0, lerp(7, 12, u)), fov: 46 }),
   arka: (u, P) => ({ pos: V(lerp(-3, 3, u), 6.5 + P.son * 0.12, P.son + 9 + P.son * 0.15), look: V(0, 0.6, P.son * 0.45), fov: 50 }),

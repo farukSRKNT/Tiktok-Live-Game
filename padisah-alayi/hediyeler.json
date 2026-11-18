@@ -12,7 +12,7 @@
     { "eylem": "mehter",   "etiket": "Mehter Ol",              "jeton": 10,   "ikon": "🥁", "ad": [], "id": [] },
     { "eylem": "sipahi",   "etiket": "Atlı Sipahi Ol",         "jeton": 30,   "ikon": "🐎", "ad": [], "id": [] },
     { "eylem": "altin",    "etiket": "Altın Saçtır",           "jeton": 50,   "ikon": "💰", "ad": [], "id": [] },
-    { "eylem": "musahip",  "etiket": "Padişahın Yanında Yürü", "jeton": 99,   "ikon": "👑", "ad": [], "id": [] },
+    { "eylem": "musahip",  "etiket": "Musahip Ol", "jeton": 99,   "ikon": "👑", "ad": [], "id": [] },
     { "eylem": "dortnala", "etiket": "Dörtnala!",              "jeton": 199,  "ikon": "💨", "ad": [], "id": [] },
     { "eylem": "senlik",   "etiket": "Şenlik Ateşi",           "minJeton": 1000, "ikon": "🎆", "ad": [], "id": [] }
   ]
