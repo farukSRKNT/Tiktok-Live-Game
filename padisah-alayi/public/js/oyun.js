@@ -47,6 +47,7 @@ export function createGame(alay) {
     let u = G.users.get(user.id);
     if (!u) { u = { id: user.id, nick: user.nick, km: 0, lastAct: G.time, joinT: G.time }; G.users.set(user.id, u); }
     if (user.nick) u.nick = user.nick;
+    if (user.avatar) u.avatar = user.avatar; // TikTok profil resmi (isim etiketinde gösterilir)
     u.lastAct = G.time;
     return u;
   }
@@ -293,7 +294,7 @@ export function createGame(alay) {
   G.kaydet = () => ({
     v: 1, t: Date.now(), s: G.s, dir: G.dir, sefer: G.sefer, durum: G.durum, energy: G.energy, likes: G.likes, diamonds: G.diamonds, sonDurak: G.sonDurak,
     scores: [...G.scores.values()],
-    uyeler: [...alay.uyeler].sort((a, b) => (a.joinT ?? 0) - (b.joinT ?? 0)).map((u) => ({ id: u.id, nick: u.nick, rol: u.rol, puan: u.puan || 0, km: u.km || 0, autoRole: !!u.autoRole, gifted: !!u.gifted, sessiz: G.time - u.lastAct })),
+    uyeler: [...alay.uyeler].sort((a, b) => (a.joinT ?? 0) - (b.joinT ?? 0)).map((u) => ({ id: u.id, nick: u.nick, avatar: u.avatar, rol: u.rol, puan: u.puan || 0, km: u.km || 0, autoRole: !!u.autoRole, gifted: !!u.gifted, sessiz: G.time - u.lastAct })),
   });
   G.yukle = (d) => {
     if (!d || d.v !== 1) return false;
@@ -302,7 +303,7 @@ export function createGame(alay) {
     if (d.durum === 'varis') { G.durum = 'varis'; G.varisT = G.time - 25; }
     for (const sc of d.scores || []) G.scores.set(sc.id, { ...sc });
     (d.uyeler || []).forEach((x, i) => {
-      const u = { id: x.id, nick: x.nick, km: x.km, puan: x.puan, autoRole: x.autoRole, gifted: x.gifted, joinT: G.time - 1000 + i * 0.01, lastAct: G.time - (x.sessiz || 0), rolT: 0 };
+      const u = { id: x.id, nick: x.nick, avatar: x.avatar, km: x.km, puan: x.puan, autoRole: x.autoRole, gifted: x.gifted, joinT: G.time - 1000 + i * 0.01, lastAct: G.time - (x.sessiz || 0), rolT: 0 };
       G.users.set(u.id, u);
       alay.ekle(u, x.rol || 'yeniceri');
     });

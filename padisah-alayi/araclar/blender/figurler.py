@@ -44,11 +44,29 @@ def insan(o, parent=None, loc=(0, 0, 0)):
         g.cubuk('#3a2418', (-0.33, 0.78, 0.42), (-0.33, 1.12, -0.12), 0.032, seg=6)
         g.cubuk(ALTIN, (-0.33, 1.12, -0.12), (-0.33, 1.22, -0.27), 0.022, seg=6, maden=True)
         g.kutu(ALTIN, (-0.33, 1.13, -0.13), (0.03, 0.03, 0.14), maden=True)
-    if o.get('tasi') == 'davul':
-        g.sil('#c9a36b', (0, 1.02, -0.44), 0.34, 0.3, seg=16, rot=(0, 0, PI / 2))
+    if o.get('tasi') == 'davul':  # mehter davulu: boyalı gövde, iki deri yüz, çember, zikzak germe ipleri
+        D = (0, 1.02, -0.47)
+        g.sil('#9a3a22', D, 0.36, 0.3, seg=18, rot=(0, 0, PI / 2))
         for s in (-1, 1):
-            g.sil('#7a2a1a', (s * 0.175, 1.02, -0.44), 0.035, 0.31, seg=16, rot=(0, 0, PI / 2))
-        g.kutu('#7a2a1a', (0, 1.25, -0.2), (0.06, 0.7, 0.04), rot=(0.6, 0, 0.6))  # askı
+            g.sil('#efe2c4', (s * 0.196, D[1], D[2]), 0.008, 0.29, seg=18, rot=(0, 0, PI / 2))
+            g.sil('#5a2416', (s * 0.172, D[1], D[2]), 0.04, 0.312, seg=18, rot=(0, 0, PI / 2))
+        n = 9
+        for i in range(n):  # germe ipleri: bir çemberden ötekine zikzak
+            a0, a1 = 2 * PI * i / n, 2 * PI * (i + 0.5) / n
+            p0 = (-0.17, D[1] + math.cos(a0) * 0.315, D[2] + math.sin(a0) * 0.315)
+            p1 = (0.17, D[1] + math.cos(a1) * 0.315, D[2] + math.sin(a1) * 0.315)
+            p2 = (-0.17, D[1] + math.cos(a0 + 2 * PI / n) * 0.315, D[2] + math.sin(a0 + 2 * PI / n) * 0.315)
+            g.cubuk('#e8d8a8', p0, p1, 0.008, seg=4)
+            g.cubuk('#e8d8a8', p1, p2, 0.008, seg=4)
+        g.cubuk('#7a2a1a', (-0.2, 1.48, -0.05), (0.17, 1.12, -0.3), 0.025, seg=4)  # askı kayışı
+        g.cubuk('#7a2a1a', (0.2, 1.48, -0.05), (-0.17, 1.12, -0.3), 0.025, seg=4)
+    if o.get('tasi') == 'nakkare':  # kuşakta iki küçük bakır nakkare
+        for s in (-1, 1):
+            c = (s * 0.14, 1.0, -0.42)
+            g.top('#b86a32', (c[0], c[1] - 0.04, c[2]), (0.26, 0.2, 0.26), u=12, v=6, maden=True)
+            g.sil('#efe2c4', (c[0], c[1] + 0.06, c[2]), 0.02, 0.13, seg=12)
+            g.sil('#5a2416', (c[0], c[1] + 0.05, c[2]), 0.03, 0.135, seg=12)
+        g.kutu('#5a2416', (0, 1.0, -0.36), (0.36, 0.05, 0.04))
     g.ob = g.nesne(parent)
 
     # bacaklar
@@ -72,9 +90,15 @@ def insan(o, parent=None, loc=(0, 0, 0)):
         k.kutu(TEN, (0, -0.7, -0.015), (0.07, 0.05, 0.045))
         k.kutu(TEN, (-s * 0.045, -0.61, -0.035), (0.03, 0.065, 0.03), rot=(0, 0, s * 0.4))
         t = o.get('tasi')
-        if t == 'zil':
-            k.sil(ALTIN, (0, -0.7, -0.06), 0.03, 0.15, seg=14, rot=(PI / 2, 0, 0), maden=True)
-            k.top(ALTIN, (0, -0.7, -0.08), 0.06, u=6, v=4, maden=True)
+        if t == 'zil':  # pirinç zil: yüzü öbür ele dönük, ortada kubbe, deri tutamak
+            k.sil(ALTIN, (-s * 0.06, -0.7, -0.03), 0.012, 0.17, 0.15, seg=16, rot=(0, 0, s * PI / 2), maden=True)
+            k.top(ALTIN, (-s * 0.07, -0.7, -0.03), (0.05, 0.11, 0.11), u=8, v=5, maden=True)
+            k.kutu('#5a2416', (-s * 0.03, -0.7, -0.03), (0.05, 0.06, 0.04))
+        if t == 'nakkare':  # iki elde ince tokmak
+            k.cubuk('#6a4a2a', (0, -0.66, -0.03), (-s * 0.06, -0.86, -0.3), 0.012, seg=4)
+            k.top('#3a2418', (-s * 0.06, -0.87, -0.31), 0.03, u=5, v=4)
+        if s < 0 and t == 'davul':  # sol elde ince çubuk (değnek)
+            k.cubuk('#8a6a3a', (0, -0.66, -0.02), (0.05, -0.9, -0.3), 0.008, seg=4)
         if s > 0 and t == 'sancak':
             k.sil('#4a3020', (0, 0.7, 0), 3.4, 0.028, seg=6)
             k.top(ALTIN, (0, 2.42, 0), 0.12, u=8, v=6, maden=True)
@@ -83,17 +107,16 @@ def insan(o, parent=None, loc=(0, 0, 0)):
             k.sil('#5a3d24', (0, 0.2, 0), 3.2, 0.022, seg=6)
             k.koni('#c0c6cc', (0, 1.95, 0), 0.32, 0.045, seg=6, maden=True)
             k.kutu('#c1121f', (0, 1.6, 0.16), (0.012, 0.16, 0.3))
-        if s > 0 and t == 'zurna':
-            k.sil('#7a5734', (0, -0.62, -0.25), 0.5, 0.025, 0.07, seg=8, rot=(-1.2, 0, 0))
-            k.sil(ALTIN, (0, -0.52, -0.02), 0.04, 0.03, seg=8, rot=(-1.2, 0, 0), maden=True)
+        if s > 0 and t in ('zurna', 'boru'):
+            nefesli(k, t)
         if s > 0 and t == 'davul':
             k.cubuk('#6a4a2a', (0, -0.66, -0.02), (0, -0.82, -0.36), 0.018, seg=5)
             k.top('#e8dcc0', (0, -0.84, -0.38), 0.06, u=6, v=4)
         ob = k.nesne(g.ob)
         if s > 0 and t == 'sancak':
             bayrak(ob, o.get('bayrak', '#c1121f'))
-        if s > 0 and t == 'zurna':
-            bos('zurna', ob)
+        if s > 0 and t in ('zurna', 'boru'):
+            bos('zurna', ob)  # oyun bu işaretle kolu çalma duruşuna alır
 
     # baş
     b = Parca('bas', (0, 1.64, 0))
@@ -114,6 +137,43 @@ def insan(o, parent=None, loc=(0, 0, 0)):
     bas_ortusu(b, o)
     b.nesne(g.ob)
     return g.ob
+
+
+def _kol_yerel(nokta, omuz=(0.34, 1.42, 0), rot=(-1.25, 0, -0.3)):
+    """Gövdedeki bir noktayı, oyunun çalma duruşundaki sağ kolun yerel koordinatına çevir."""
+    from mathutils import Euler, Vector
+    R = Euler(rot, 'XYZ').to_matrix()
+    v = R.transposed() @ (Vector(nokta) - Vector(omuz))
+    return tuple(v)
+
+
+def nefesli(k, t):
+    """Zurna (koyu ahşap, açılan kalak, dudaklık diski) ya da boru (pirinç). Ağızdan ele doğru."""
+    agiz = _kol_yerel((0.0, 1.55, -0.2))
+    if t == 'zurna':
+        uc = _kol_yerel((0.04, 1.12, -0.82))
+        k.cubuk('#4a2a14', agiz, uc, 0.018, 0.04, seg=8)
+        a, b = Vector3(agiz), Vector3(uc)
+        d = (b - a)
+        kalak_bas, kalak_son = tuple(b - d * 0.18), tuple(b + d * 0.12)
+        k.cubuk('#5a3418', kalak_bas, kalak_son, 0.04, 0.085, seg=10)
+        k.cubuk(ALTIN, tuple(a + d * 0.06), tuple(a + d * 0.08), 0.045, seg=10, maden=True)  # dudaklık
+        k.cubuk(ALTIN, tuple(b - d * 0.2), tuple(b - d * 0.17), 0.045, seg=8, maden=True)
+        for i in range(4):  # parmak delikleri
+            q = a + d * (0.4 + i * 0.1)
+            k.top(SIYAH, (q[0], q[1] + 0.02, q[2] - 0.02), 0.014, u=4, v=3)
+    else:
+        uc = _kol_yerel((0.05, 1.9, -1.05))
+        k.cubuk(ALTIN, agiz, uc, 0.016, seg=8, maden=True)
+        a, b = Vector3(agiz), Vector3(uc)
+        d = (b - a)
+        k.cubuk(ALTIN, tuple(b - d * 0.15), tuple(b + d * 0.1), 0.02, 0.1, seg=12, maden=True)
+        k.cubuk(ALTIN, tuple(a + d * 0.45), tuple(a + d * 0.47), 0.03, seg=8, maden=True)
+
+
+def Vector3(t):
+    from mathutils import Vector
+    return Vector(t)
 
 
 def bas_ortusu(b, o):
@@ -282,9 +342,9 @@ def figur_listesi():
     for i, c in enumerate(YENICERI):
         L.append(('yeniceri' + ('' if i == 0 else '-%d' % (i + 1)), lambda r, c=c, i=i: insan(
             dict(kaftan=c, bas='bork', sakal='#2a1d15' if i % 2 == 0 else None), r)))
-    for i, t in enumerate(('davul', 'zurna', 'zil')):
+    for i, t in enumerate(('davul', 'zurna', 'zil', 'nakkare', 'boru')):
         L.append(('mehter' + ('' if i == 0 else '-%d' % (i + 1)), lambda r, t=t, i=i: insan(
-            dict(kaftan='#b3202a', ic='#e8c25a', kusak='#e8c25a', bas='mehter', sakal='#2a1d15' if i != 1 else None, tasi=t), r)))
+            dict(kaftan='#b3202a', ic='#e8c25a', kusak='#e8c25a', bas='mehter', sakal='#2a1d15' if i not in (1, 4) else None, tasi=t), r)))
     for i, b in enumerate(('#c1121f', '#1f6b3a')):
         L.append(('sancak' + ('' if i == 0 else '-%d' % (i + 1)), lambda r, b=b: insan(
             dict(kaftan='#7d2424', bas='bork', tasi='sancak', bayrak=b, sakal='#2a1d15'), r)))

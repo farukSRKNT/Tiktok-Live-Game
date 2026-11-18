@@ -136,7 +136,7 @@ function loop() {
   world.update(G.s, G.dir, dt, t);
   world.setDay(((t / DAY) + 0.08) % 1);
   const denizde = world.biyom === 'deniz';
-  alay.update(dt, G.hiz, t, denizde);
+  alay.update(dt, G.hiz, t, denizde, world.gemi);
   // son sıranın z'si (arka çekimler için) ve yaklaşan yapının yeri
   let son = 8; for (const u of alay.uyeler) if (u.hedef && u.hedef.z > son) son = u.hedef.z;
   const P = { son, denizde, varis: G.durum === 'varis' };

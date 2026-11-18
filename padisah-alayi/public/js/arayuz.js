@@ -54,6 +54,21 @@ export function createUI(G, camera, alay, hooks) {
     if (tmp.z > 1 || tmp.z < -1) return null;
     return { x: (tmp.x * 0.5 + 0.5) * W, y: (-tmp.y * 0.5 + 0.5) * H };
   }
+  // TikTok profil resmi: sunucu üzerinden (aynı adres) alınır, bir kez yüklenip saklanır
+  const AV = new Map();
+  const avatarSrc = (url) => '/api/avatar?u=' + encodeURIComponent(url);
+  function avatarImg(url) {
+    if (!url) return null;
+    let im = AV.get(url);
+    if (!im) { im = new Image(); im.src = avatarSrc(url); AV.set(url, im); if (AV.size > 300) AV.delete(AV.keys().next().value); }
+    return im.complete && im.naturalWidth ? im : null;
+  }
+  function avatarCiz(im, cx, cy, r) {
+    ctx.save(); ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI * 2); ctx.closePath();
+    ctx.fillStyle = '#e8c25a'; ctx.fill();
+    ctx.beginPath(); ctx.arc(cx, cy, r * 0.88, 0, Math.PI * 2); ctx.clip();
+    ctx.drawImage(im, cx - r, cy - r, r * 2, r * 2); ctx.restore();
+  }
   const headPos = (o) => { const p = o.getWorldPosition(new THREE.Vector3()); p.y += 0.45; return p; };
 
   // ---------- her kare: etiketler + efektler ----------
@@ -82,7 +97,14 @@ export function createUI(G, camera, alay, hooks) {
         let y = p.y;
         if (it.vip) { pill(p.x, y, it.vip, it.renk, '#fff', 26 * k); continue; }
         const rol = u.rol && u.rol !== 'yeniceri' ? { mehter: '🥁 Mehter', sancak: '🚩 Sancaktar', musahip: '👑 Musahip', sipahi: '🐎 Sipahi' }[u.rol] : null;
-        y -= pill(p.x, y, u.nick, 'rgba(30,18,8,.74)', '#fff', 22 * k) + 4;
+        const avi = avatarImg(u.avatar), fs = 22 * k;
+        if (avi) { // isim etiketinin solunda yuvarlak profil resmi
+          ctx.font = `800 ${fs}px ${FONT}`; const w = ctx.measureText(u.nick).width + fs * 1.1, hh = fs * 1.6;
+          const X = clamp(p.x - w / 2 + hh * 0.6, 4 + hh * 1.2, W - w - 4);
+          pill(X + w / 2, y, u.nick, 'rgba(30,18,8,.74)', '#fff', fs);
+          avatarCiz(avi, X - hh * 0.55, y - hh / 2, hh * 0.72);
+          y -= hh + 4;
+        } else y -= pill(p.x, y, u.nick, 'rgba(30,18,8,.74)', '#fff', fs) + 4;
         if (rol) y -= pill(p.x, y, rol, 'rgba(232,194,90,.96)', '#3a2300', 20 * k) + 4;
         const b = u.bubble;
         if (b) {
@@ -186,7 +208,8 @@ export function createUI(G, camera, alay, hooks) {
     const feed = $('feed'), li = document.createElement('li');
     li.className = 'fi ' + item.kind;
     const ini = (item.user.nick || '?').charAt(0).toLocaleUpperCase('tr');
-    li.innerHTML = `<span class="av" style="background:#8a3a19">${esc(ini)}</span><span class="tx"><b>${esc(item.user.nick)}</b> ${esc(item.text)}</span>`;
+    const avu = item.user.avatar || (G.users.get(item.user.id) || {}).avatar;
+    li.innerHTML = (avu ? `<img class="av" alt="" src="${avatarSrc(avu)}" style="object-fit:cover;padding:0">` : `<span class="av" style="background:#8a3a19">${esc(ini)}</span>`) + `<span class="tx"><b>${esc(item.user.nick)}</b> ${esc(item.text)}</span>`;
     feed.prepend(li);
     while (feed.children.length > 40) feed.lastChild.remove();
   }

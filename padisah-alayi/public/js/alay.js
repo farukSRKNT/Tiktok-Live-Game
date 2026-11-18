@@ -166,6 +166,14 @@ function animInsan(U, ph, amp, t) {
     p.needsUpdate = true;
   }
 }
+// oturup kürek çekme: bacaklar öne, gövde ileri-geri, iki kol kürek sapını çeker
+function kurekCek(U, ph) {
+  const s = Math.sin(ph);
+  U.govde.position.y = -0.46;
+  U.govde.rotation.x = s * 0.22;
+  U.bacakL.rotation.set(-1.45, 0, 0.08); U.bacakR.rotation.set(-1.45, 0, -0.08);
+  U.kolL.rotation.set(-1.15 + s * 0.45, 0, 0.12); U.kolR.rotation.set(-1.15 + s * 0.45, 0, -0.12);
+}
 function animAt(A, ph, amp) {
   const s = Math.sin(ph), c = Math.cos(ph);
   A.bacak[0].rotation.x = s * 0.5 * amp; A.bacak[3].rotation.x = s * 0.5 * amp;
@@ -209,8 +217,16 @@ export function createAlay(scene) {
 
   // Dizilim: herkes padişah ve İbrahim Paşa'nın ARKASINDA. Hediye toplamı büyük olan en yakında,
   // hediyesizler en geride (önce gelen önde). Yayalar 3'lü, atlılar 2'li sıra.
+  // Kürek: gemi alayla giderken yeniçeriler iki yandaki sıralara ikişer-üçer oturup kürek çeker (kadırga yerel koordinatı).
+  const KUREK_YER = [];
+  for (let z = 0, i = 0; z <= 36; z += 2, i++) for (const s of [-1, 1]) for (const x of (i % 2 ? [2.85, 3.4, 3.95] : [3.1, 3.7])) KUREK_YER.push({ x: s * x, z });
   A.dizil = () => {
-    const sirali = [...A.uyeler].sort((a, b) => (b.puan || 0) - (a.puan || 0) || (a.joinT ?? 0) - (b.joinT ?? 0));
+    for (const u of A.uyeler) u.kurekYer = null;
+    if (A.kurekModu) {
+      const kurekci = A.uyeler.filter((u) => u.rol === 'yeniceri').sort((a, b) => (a.joinT ?? 0) - (b.joinT ?? 0));
+      kurekci.slice(0, KUREK_YER.length).forEach((u, i) => { const y = KUREK_YER[i]; u.kurekYer = y; u.hedef = new THREE.Vector3(y.x, 0, y.z + (A.gemiZ || 0)); });
+    }
+    const sirali = [...A.uyeler].filter((u) => !u.kurekYer).sort((a, b) => (b.puan || 0) - (a.puan || 0) || (a.joinT ?? 0) - (b.joinT ?? 0));
     let z = 6.2, satir = [], tip = null;
     const kapat = () => {
       if (!satir.length) return;
@@ -249,7 +265,10 @@ export function createAlay(scene) {
   A.sayi = (rol) => A.uyeler.filter((u) => u.rol === rol).length;
 
   // her kare
-  A.update = (dt, hiz, t, denizde) => {
+  A.update = (dt, hiz, t, denizde, gemi) => {
+    const kurek = !!(gemi && gemi.bagli);
+    A.gemiZ = gemi ? gemi.z : 0;
+    if (kurek !== !!A.kurekModu) { A.kurekModu = kurek; A.dizil(); }
     // adım hızı yürüyüş hızına bağlı; denizde (mavnada) durup sallanırlar
     const amp = denizde ? 0.08 : Math.min(1.2, 0.55 + hiz * 0.18);
     A.ph += dt * (denizde ? 1 : 3.2 + hiz * 1.6);
@@ -263,6 +282,11 @@ export function createAlay(scene) {
         c.position.lerp(u.hedef, k);
       }
       const U = c.userData;
+      if (u.kurekYer && A.kurekModu && !U.at && U.govde) { // yerine varınca oturup kürek çeker (kıça bakar)
+        const yerde = c.position.distanceTo(u.hedef) < 0.35;
+        c.rotation.y += ((yerde ? Math.PI : 0) - c.rotation.y) * Math.min(1, dt * 4);
+        if (yerde) { kurekCek(U, A.ph * 0.45 + (u.kurekYer.z * 0.02)); continue; }
+      } else if (c.rotation.y !== 0 || (U.govde && U.govde.rotation.x)) { c.rotation.y = 0; if (U.govde) { U.govde.rotation.x = 0; U.bacakL.rotation.z = 0; U.bacakR.rotation.z = 0; } }
       if (U.mixer) U.mixer.update(dt * (0.6 + hiz * 0.3));
       else if (U.at) { animAt(U.at, A.ph * 0.5 + u.faz * 6, amp); animInsan(U.binici, A.ph + u.faz, amp, t); }
       else animInsan(U, A.ph + u.faz * 3, amp, t);

@@ -5,6 +5,13 @@ import * as THREE from 'three';
 import { DURAKLAR, biyomAt, TOPLAM_S } from './rota.js';
 
 export const L = 24;          // parça boyu
+// deniz geçişleri: [başlangıç s, bitiş s]
+const DENIZ = [];
+{
+  let a = null; const adim = Math.max(0.5, TOPLAM_S / 40000);
+  for (let q = 0; q <= TOPLAM_S; q += adim) { const d = biyomAt(q) === 'deniz'; if (d && a === null) a = q; if (!d && a !== null) { DENIZ.push([a, q]); a = null; } }
+  if (a !== null) DENIZ.push([a, TOPLAM_S]);
+}
 const FAR = 300, BEHIND = 60; // ne kadar ileri/geri parça tutulur
 const YOL_G = 5.2;            // yol genişliği
 
@@ -81,7 +88,7 @@ function agacSec(B, r) {
   return B.agac[0][0];
 }
 // modeller/ klasöründen yüklenen yapılar (ev-1.glb, ev-2.glb …, kadirga.glb). Yoksa kodla yapılanlar kullanılır.
-const YAPI_GLB = { ev: [], kadirga: null };
+const YAPI_GLB = { ev: [], kadirga: null, liman: null };
 function ev(r) {
   if (YAPI_GLB.ev.length) {
     const g = YAPI_GLB.ev[Math.floor(r() * YAPI_GLB.ev.length) % YAPI_GLB.ev.length].clone();
@@ -259,23 +266,34 @@ export function buildWorld(scene) {
 
   function buildChunk(n) {
     const r = rng(n * 7919 + 13), q0 = n * L, qm = q0 + L / 2;
-    const bk = biyomAt(qm), B = BIYOM[bk] || BIYOM.kir;
+    // kıyı: bu parçada kara ile deniz arasında geçiş var mı? (varsa kara yalnızca kıyıya kadar uzanır, kıyıya liman konur)
+    const denizA = biyomAt(q0) === 'deniz', denizB = biyomAt(q0 + L - 0.01) === 'deniz';
+    let kiyi = null;
+    if (denizA !== denizB) for (let q = q0; q < q0 + L; q += 0.25) if ((biyomAt(q) === 'deniz') !== denizA) { kiyi = q; break; }
+    const karaA = kiyi == null ? q0 : denizA ? kiyi : q0, karaB = kiyi == null ? q0 + L : denizA ? q0 + L : kiyi;
+    const karaZ = -((karaA + karaB) / 2 - qm), karaL = karaB - karaA + 0.05;
+    const bk0 = biyomAt(qm), bk = kiyi != null && bk0 === 'deniz' ? biyomAt(denizA ? q0 + L - 0.01 : q0) : bk0, B = BIYOM[bk] || BIYOM.kir;
     const g = new THREE.Group(); g.userData.n = n;
     const sideSign = () => (r() < 0.5 ? -1 : 1);
     // kara + yol
     if (B.yer) {
       const yer = getYer(B.yer), w = B.sol + B.sag;
-      const p = mesh(G.yer, yer, (B.sag - B.sol) / 2, -0.02, 0, w, 1, L + 0.05, false); g.add(p);
+      const p = mesh(G.yer, yer, (B.sag - B.sol) / 2, -0.02, karaZ, w, 1, karaL, false); g.add(p);
       const tasli = bk === 'sehir' || bk === 'bursa' || bk === 'manisa';
-      g.add(mesh(G.yer, getYol(B.yol, tasli), 0, 0, 0, YOL_G, 1, L + 0.05, false));
+      g.add(mesh(G.yer, getYol(B.yol, tasli), 0, 0, karaZ, YOL_G, 1, karaL, false));
       // kıyı şeridi (kum)
-      if (B.sag < 20) g.add(mesh(G.yer, mat('kum', '#d8c79a'), B.sag + 1.5, -0.1, 0, 3, 1, L + 0.05, false));
-      if (B.sol < 20) g.add(mesh(G.yer, mat('kum', '#d8c79a'), -B.sol - 1.5, -0.1, 0, 3, 1, L + 0.05, false));
+      if (B.sag < 20) g.add(mesh(G.yer, mat('kum', '#d8c79a'), B.sag + 1.5, -0.1, karaZ, 3, 1, karaL, false));
+      if (B.sol < 20) g.add(mesh(G.yer, mat('kum', '#d8c79a'), -B.sol - 1.5, -0.1, karaZ, 3, 1, karaL, false));
+    }
+    if (kiyi != null && YAPI_GLB.liman) { // liman: deniz tarafı (modelde -z) denize bakar
+      const lm = YAPI_GLB.liman.clone(); lm.position.set(0, 0, -(kiyi - qm)); lm.rotation.y = denizA ? Math.PI : 0; g.add(lm);
     }
     const place = (o, xmin, xmax, side) => {
       const s = side || sideSign(), x = s * (xmin + r() * (xmax - xmin));
       if ((s < 0 && -x > B.sol - 1) || (s > 0 && x > B.sag - 1)) return false;
-      o.position.set(x, 0, (r() - 0.5) * L); o.rotation.y = r() * 6; g.add(o); return true;
+      const z = (r() - 0.5) * L;
+      if (kiyi != null) { const sz = qm - z; if (biyomAt(sz) === 'deniz' || Math.abs(sz - kiyi) < 18) return false; } // denize ve limana koyma
+      o.position.set(x, 0, z); o.rotation.y = r() * 6; g.add(o); return true;
     };
     // ağaçlar: yol kenarında seyrek, uzakta daha sık
     // Yolun iki yanı kameralar için boş bırakılır (yakın çekimde ağaç kameranın içinden geçmesin):
@@ -336,16 +354,26 @@ export function buildWorld(scene) {
       c.traverse((o) => { if (o.userData.salla != null) { o.position.y = Math.sin(t * 1.3 + o.userData.salla) * 0.12; o.rotation.z = Math.sin(t + o.userData.salla) * 0.05; } });
     }
     W.biyom = biyomAt(s);
-    const denizde = W.biyom === 'deniz';
-    W.mavna.visible = denizde;
-    if (denizde) { W.mavna.position.y = Math.sin(t * 0.9) * 0.08; W.mavna.rotation.z = Math.sin(t * 0.7) * 0.012; }
+    // Gemi: kalkış limanında kıçı rıhtıma yanaşmış bekler, alay güverteye yürür; alay tamamen binince gemi alayla gider,
+    // varış limanında başı rıhtıma değince durur ve alay karaya iner. W.gemi.bagli: gemi alayla birlikte gidiyor (kürek çekilir).
+    const kic = YAPI_GLB.kadirga ? 48 : 24, bas = YAPI_GLB.kadirga ? 24 : 12;
+    const D = DENIZ.find(([a, b]) => s > a - 170 && s < b + 170);
+    W.gemi = null;
+    if (D) {
+      const [a, b] = D, lo = dir > 0 ? a + kic : a + bas, hi = dir > 0 ? b - bas : b - kic;
+      const sg = lo <= hi ? Math.min(hi, Math.max(lo, s)) : (a + b) / 2;
+      W.mavna.visible = true;
+      W.mavna.position.z = -(sg - s) * dir;
+      W.mavna.position.y = Math.sin(t * 0.9) * 0.08; W.mavna.rotation.z = Math.sin(t * 0.7) * 0.012;
+      W.gemi = { bagli: Math.abs(sg - s) < 0.01, z: W.mavna.position.z };
+    } else W.mavna.visible = false;
   };
 
   // modeller/ klasöründeki yapı modelleri: ev-*.glb (köy/şehir evleri), kadirga.glb (deniz geçişi gemisi)
   W.loadModels = async () => {
     let list = [];
     try { list = (await (await fetch('/api/models')).json()).models || []; } catch {}
-    const istenen = list.filter((f) => /^(ev(-\d+)?|kadirga)\.(glb|gltf)$/i.test(f));
+    const istenen = list.filter((f) => /^(ev(-\d+)?|kadirga|liman)\.(glb|gltf)$/i.test(f));
     if (!istenen.length) return;
     const { GLTFLoader } = await import('three/addons/loaders/GLTFLoader.js');
     const loader = new GLTFLoader();
@@ -353,7 +381,7 @@ export function buildWorld(scene) {
       try {
         const gl = await loader.loadAsync('/modeller/' + encodeURIComponent(f));
         gl.scene.traverse((k) => { if (k.isMesh) { k.castShadow = true; k.receiveShadow = true; } });
-        if (/^kadirga/i.test(f)) YAPI_GLB.kadirga = gl.scene; else YAPI_GLB.ev.push(gl.scene);
+        if (/^kadirga/i.test(f)) YAPI_GLB.kadirga = gl.scene; else if (/^liman/i.test(f)) YAPI_GLB.liman = gl.scene; else YAPI_GLB.ev.push(gl.scene);
         console.log(`[model] ${f} yüklendi`);
       } catch (e) { console.warn('[model] yüklenemedi:', f, e); }
     }

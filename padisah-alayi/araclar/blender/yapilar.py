@@ -185,14 +185,14 @@ def kic_kosku(p):
     def nok(u, v):
         return (math.sin(u * 4) * 0.25 * u, y + 5.8 - v * 2.0, 48.85 + u * 3.0)
 
-    def rnk(i, j):
-        u, v = (i + 0.5) / 18, (j + 0.5) / 12
-        x0, yy = u * 3.0 - 1.2, (v - 0.5) * 2.0
-        dis = math.hypot(x0, yy) < 0.65
-        ic_ = math.hypot(x0 - 0.22, yy) < 0.53
-        yz = math.hypot(x0 - 0.75, yy) < 0.16
-        return BEYAZ if (dis and not ic_) or yz else YESIL
-    p.izgara(nok, 18, 12, rnk)
+    def rnk(i, j):  # yeşil zemin üzerinde üç beyaz hilal (ikisi üstte, biri altta)
+        u, v = (i + 0.5) / 36, (j + 0.5) / 24
+        x0, yy = u * 3.0 - 1.5, (v - 0.5) * 2.0
+        for cx, cy in ((-0.62, -0.42), (0.42, -0.42), (-0.1, 0.48)):  # v=0 üst kenar
+            if math.hypot(x0 - cx, yy - cy) < 0.36 and math.hypot(x0 - cx - 0.13, yy - cy) > 0.29:
+                return BEYAZ
+        return YESIL
+    p.izgara(nok, 36, 24, rnk)
 
 
 def kadirga(kok):
@@ -220,6 +220,79 @@ def kadirga(kok):
             for dz in (-1.5, 1.5):
                 p.cubuk('#3a2a20', (0, boy * 0.85, z), (s * gen(z + dz) * 1.0, 0.75, z + dz), 0.025, seg=4)
     kic_kosku(p)
+    ob = p.nesne(kok)
+    return ob
+
+
+# ---------------- liman ----------------
+# Kıyı çizgisi z=0; kara +z tarafında, deniz -z tarafında. Yol x≈0'dan rıhtıma iner, gemi rıhtımın ucuna yanaşır.
+TAS = '#a49c8c'
+TAS_K = '#857d70'
+
+
+def liman(kok):
+    p = Parca('liman')
+    # rıhtım: taş kaplı kenar, denize inen duvar, taş sıraları
+    p.kutu(TAS, (0, -0.2, 3.0), (90, 0.5, 6.0))
+    p.kutu(TAS_K, (0, -0.95, -0.05), (90, 1.6, 0.4))
+    for i in range(-22, 23):
+        p.kutu(koyu(TAS, 0.9) if i % 2 else TAS, (i * 2.0, 0.06, 0.4), (1.9, 0.04, 0.7))
+    # babalar (gemi bağlama direkleri), yolun önü boş
+    for x in (-36, -28, -20, -12, -7, 7, 12, 20, 28, 36):
+        p.sil('#2a2420', (x, 0.35, 0.8), 0.6, 0.16, 0.13, seg=8)
+        p.top('#2a2420', (x, 0.68, 0.8), 0.3, u=8, v=5)
+    # ahşap iskele (sağda, denize uzanır)
+    for z in range(0, 30, 2):
+        p.kutu('#8a6a46' if z % 4 else '#7a5a3a', (13, 0.05, -1 - z), (4.0, 0.16, 1.9))
+    for z in range(0, 31, 6):
+        for x in (11.2, 14.8):
+            p.sil('#4a3424', (x, -0.6, -1 - z), 1.6, 0.16, seg=6)
+    # iskelede halat yığını, fıçılar, sandıklar, çuvallar
+    for i, (x, z) in enumerate(((-9, 4), (-10.2, 4.6), (-9.6, 5.6), (9, 4.2), (10.4, 5.2), (13, -6), (12.4, -14))):
+        if i % 3 == 0:
+            p.sil('#7a5230', (x, 0.5, z), 0.95, 0.38, 0.42, seg=10)
+            for y in (0.2, 0.8):
+                p.sil('#3a3028', (x, y, z), 0.05, 0.43, seg=10)
+        elif i % 3 == 1:
+            p.kutu('#8a6a40', (x, 0.4, z), (0.9, 0.8, 0.9), rot=(0, 0.3 * i, 0))
+            p.kutu('#5a4428', (x, 0.81, z), (0.95, 0.04, 0.95), rot=(0, 0.3 * i, 0))
+        else:
+            p.top('#d8c8a0', (x, 0.3, z), (0.9, 0.55, 0.7), u=8, v=5)
+    # yük vinci (ahşap)
+    p.cubuk('#5a4028', (16, 0.1, -4), (16, 6.0, -4), 0.18, seg=6)
+    p.cubuk('#5a4028', (16, 5.6, -4), (16, 6.2, -9.5), 0.12, seg=6)
+    p.cubuk('#d8c8a0', (16, 6.1, -9.2), (16, 2.0, -9.2), 0.025, seg=4)
+    p.kutu('#8a6a40', (16, 1.6, -9.2), (0.8, 0.7, 0.8))
+    # iki taş ambar (kiremit çatılı)
+    for cx, cz, w, d in ((-22, 11, 10, 6), (24, 12, 9, 6)):
+        p.kutu('#c8b89a', (cx, 2.0, cz), (w, 4.0, d))
+        p.kutu(TAS_K, (cx, 0.25, cz), (w + 0.2, 0.5, d + 0.2))
+        for k_ in range(3):
+            x = cx - w / 2 + w * (k_ + 0.5) / 3
+            p.kutu('#3a2a1a', (x, 1.5, cz - d / 2 - 0.02), (1.6, 2.6, 0.06))  # kemerli kapılar
+            p.top('#3a2a1a', (x, 2.8, cz - d / 2 - 0.02), (1.6, 1.0, 0.06), u=10, v=6)
+            p.top('#c8b89a', (x, 2.8, cz - d / 2 - 0.05), (1.9, 1.2, 0.02), u=10, v=6)
+        A, B, C, D = (cx - w / 2 - 0.5, 4.0, cz - d / 2 - 0.5), (cx + w / 2 + 0.5, 4.0, cz - d / 2 - 0.5), (cx + w / 2 + 0.5, 4.0, cz + d / 2 + 0.5), (cx - w / 2 - 0.5, 4.0, cz + d / 2 + 0.5)
+        R1, R2 = (cx - w / 2 + d / 2, 5.6, cz), (cx + w / 2 - d / 2, 5.6, cz)
+        p.yuz(KIREMIT, [A, B, R2, R1]); p.yuz(KIREMIT, [C, D, R1, R2])
+        p.yuz(koyu(KIREMIT, 0.9), [B, C, R2]); p.yuz(koyu(KIREMIT, 0.9), [D, A, R1])
+    # fener kulesi (solda taş mendirek ucunda)
+    for z in range(0, 22, 2):
+        p.kutu(TAS if z % 4 else TAS_K, (-30, -0.1, -1 - z), (5.0, 0.7, 2.0))
+    p.sil('#ece4d4', (-30, 5.0, -22), 10.0, 1.5, 1.1, seg=12)
+    for y in (2.5, 5.0, 7.5):
+        p.sil(KIRMIZI, (-30, y, -22), 0.5, 1.5 - (y / 10) * 0.42 + 0.03, seg=12)
+    p.sil('#4a3a30', (-30, 10.1, -22), 0.25, 1.4, seg=12)
+    p.sil('#ffd27a', (-30, 10.9, -22), 1.3, 0.75, seg=10)
+    p.koni('#4a3a30', (-30, 12.0, -22), 1.0, 1.0, seg=10)
+    p.top(ALTIN, (-30, 12.6, -22), 0.25, u=6, v=4, maden=True)
+    alem(p, (-30, 13.2, -22), 0.35)
+    # bağlı kayıklar
+    for i, (x, z) in enumerate(((10.2, -8), (10.2, -18), (15.8, -12), (15.8, -24), (-26.5, -10))):
+        p.kutu('#6a4426', (x, -0.1, z), (1.4, 0.45, 4.2))
+        p.kutu('#8a5a34', (x, 0.14, z), (1.5, 0.06, 4.3))
+        if i % 2 == 0:
+            p.sil('#4a3020', (x, 1.8, z), 3.6, 0.05, seg=5)
     ob = p.nesne(kok)
     return ob
 
@@ -383,6 +456,7 @@ def yapi_listesi():
     """(ad, kur, (kamera, hedef))"""
     return [
         ('kadirga', kadirga, [((-38, 22, -40), (0, 2, 8)), ((-42, 2.5, 4), (0, 1.5, 6)), ((-16, 6, 58), (0, 3, 40))]),
+        ('liman', liman, ((-40, 18, -40), (0, 0, 0))),
         ('ev-1', lambda r: osmanli_evi(r), ((-9, 6, -12), (0, 3, 0))),
         ('ev-2', lambda r: osmanli_evi(r, W=7.5, D=5.5, cikma=1.0, cumba=False, siva='#eadcb8', balkon=True), ((-10, 6, -13), (0, 3, 0))),
         ('ev-3', lambda r: osmanli_evi(r, W=5.0, D=4.4, cikma=0.7, cumba=True, siva='#f0e2d8'), ((-8, 6, -11), (0, 3, 0))),

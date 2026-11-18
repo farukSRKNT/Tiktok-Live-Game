@@ -20,8 +20,8 @@ blender -b --factory-startup --python araclar/blender/modelle.py -- kadirga ev -
 | Dosya | İçerik |
 |---|---|
 | `ortak.py` | Oyun koordinatında parça üretimi (kutu, silindir, koni, küre, çubuk, ızgara), köşe renkleri, GLB dışa aktarma, önizleme |
-| `figurler.py` | Yaya figür (`insan`), at (`at`), atlı; padişah, İbrahim Paşa, yeniçeri (4 renk), mehter (davul/zurna/zil), sancaktar (kırmızı/yeşil), musahip, sipahi (3 at rengi) |
-| `yapilar.py` | Kadırga ve 4 çeşit Osmanlı evi |
+| `figurler.py` | Yaya figür (`insan`), at (`at`), atlı; padişah, İbrahim Paşa, yeniçeri (4 renk), mehter (davul/zurna/zil/nakkare/boru), sancaktar (kırmızı/yeşil), musahip, sipahi (3 at rengi) |
+| `yapilar.py` | Kadırga (üç hilalli yeşil sancak), liman (rıhtım, iskele, ambarlar, fener kulesi) ve 4 çeşit Osmanlı evi |
 | `modelle.py` | Hepsini üretip `modeller/` klasörüne yazar |
 
 ## Nasıl çalışıyor
