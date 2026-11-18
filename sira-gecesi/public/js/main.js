@@ -65,7 +65,7 @@ const UI = createUI(G, camera, salon, {
 });
 
 // hediye kuralları (hediyeler.json)
-fetch('/api/rules').then((r) => r.json()).then((j) => { if (Array.isArray(j.kurallar) && j.kurallar.length) G.rules = j.kurallar; UI.renderRuleButtons(); }).catch(() => UI.renderRuleButtons());
+fetch('/api/rules').then((r) => r.json()).then((j) => { if (Array.isArray(j.kurallar) && j.kurallar.length) G.rules = j.kurallar; if (j.katilim) G.joinMode = String(j.katilim); UI.renderRuleButtons(); }).catch(() => UI.renderRuleButtons());
 UI.renderRuleButtons();
 
 // sunucudan gerçek olaylar (SSE)
@@ -76,6 +76,7 @@ if (location.protocol !== 'file:' && window.EventSource) {
   es.onmessage = (e) => {
     let ev; try { ev = JSON.parse(e.data); } catch { return; }
     if (ev.type === 'status') { live.status = ev.status; UI.setLive(ev.status); demo.paused = false; return; }
+    ev.live = true; // katılım kuralı (hediyeler.json → katilim) yalnızca gerçek yayın olaylarına uygulanır, demo herkesi alır
     G.handle(ev);
   };
 }
