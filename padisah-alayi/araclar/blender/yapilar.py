@@ -158,32 +158,32 @@ def flama(p, bas, boy, gen_, renk=KIRMIZI, dalga=0.0):
 def kic_kosku(p):
     z0 = 41.5
     yk = 0.05 + sirt(44) * 0.55
-    p.kutu('#8a5a34', (0, yk + 0.5, 45), (5.2, 1.0, 7.5))  # kasara (yükseltilmiş kıç güvertesi)
-    p.kutu(ALTIN, (0, yk + 1.02, 45), (5.3, 0.06, 7.6), maden=True)
+    p.kutu('#8a5a34', (0, yk + 0.5, 44.3), (4.6, 1.0, 5.8))  # kasara (yükseltilmiş kıç güvertesi)
+    p.kutu(ALTIN, (0, yk + 1.02, 44.3), (4.7, 0.06, 5.9), maden=True)
     y = yk + 1.05
-    for x in (-2.0, 2.0):
-        for z in (42.4, 45.2, 48.0):
-            p.sil(ALTIN if z == 45.2 else KIRMIZI, (x, y + 1.2, z), 2.4, 0.09, seg=8)
-    p.kutu(KIRMIZI, (0, y + 2.45, 45.2), (4.6, 0.18, 6.4))  # çatı saçağı
-    p.kutu(ALTIN, (0, y + 2.33, 45.2), (4.7, 0.06, 6.5), maden=True)
-    p.top(KIRMIZI, (0, y + 2.55, 45.2), (4.0, 1.6, 5.6), u=16, v=8)  # kubbe benzeri tente
-    p.top(ALTIN, (0, y + 3.4, 45.2), 0.3, u=8, v=6, maden=True)
-    alem(p, (0, y + 4.0, 45.2), 0.4)
+    for x in (-1.9, 1.9):
+        for z in (42.0, 44.3, 46.6):
+            p.sil(ALTIN if z == 44.3 else KIRMIZI, (x, y + 1.2, z), 2.4, 0.09, seg=8)
+    p.kutu(KIRMIZI, (0, y + 2.45, 44.3), (4.4, 0.18, 5.6))  # çatı saçağı
+    p.kutu(ALTIN, (0, y + 2.33, 44.3), (4.5, 0.06, 5.7), maden=True)
+    p.top(KIRMIZI, (0, y + 2.55, 44.3), (3.8, 1.6, 5.0), u=16, v=8)  # kubbe benzeri tente
+    p.top(ALTIN, (0, y + 3.4, 44.3), 0.3, u=8, v=6, maden=True)
+    alem(p, (0, y + 4.0, 44.3), 0.4)
     # perdeler / korkuluk
     for s in (-1, 1):
-        p.kutu('#e8d8a8', (s * 2.0, y + 0.45, 45.2), (0.05, 0.9, 5.6))
+        p.kutu('#e8d8a8', (s * 1.9, y + 0.45, 44.3), (0.05, 0.9, 4.6))
     # kıç fenerleri
     for x in (-1.6, 0, 1.6):
         hy = y + (3.2 if x == 0 else 2.4)
-        p.sil(AHSAP_K, (x, hy - 0.9, 49.2), 1.8, 0.05, seg=6)
-        p.sil(ALTIN, (x, hy + 0.3, 49.2), 0.7, 0.28, 0.2, seg=8, maden=True)
-        p.top(ALTIN, (x, hy + 0.75, 49.2), 0.25, u=8, v=5, maden=True)
+        p.sil(AHSAP_K, (x, hy - 0.9, 47.6), 1.8, 0.05, seg=6)
+        p.sil(ALTIN, (x, hy + 0.3, 47.6), 0.7, 0.28, 0.2, seg=8, maden=True)
+        p.top(ALTIN, (x, hy + 0.75, 47.6), 0.25, u=8, v=5, maden=True)
     # yeşil sancak
-    p.sil(AHSAP_K, (0, y + 3.0, 50.4), 6.0, 0.07, seg=6)
-    p.top(ALTIN, (0, y + 6.05, 50.4), 0.18, u=8, v=5, maden=True)
+    p.sil(AHSAP_K, (0, y + 3.0, 48.8), 6.0, 0.07, seg=6)
+    p.top(ALTIN, (0, y + 6.05, 48.8), 0.18, u=8, v=5, maden=True)
 
     def nok(u, v):
-        return (math.sin(u * 4) * 0.25 * u, y + 5.8 - v * 2.0, 50.45 + u * 3.0)
+        return (math.sin(u * 4) * 0.25 * u, y + 5.8 - v * 2.0, 48.85 + u * 3.0)
 
     def rnk(i, j):
         u, v = (i + 0.5) / 18, (j + 0.5) / 12
@@ -248,13 +248,17 @@ def pencere(p, x, y, z, w, h, yon, kafes=False):
                 p.kutu('#5a3d28', (x, y - h / 2 + h * i / 6, z - 0.07), (w, 0.03, 0.03))
             for i in range(1, 4):
                 p.kutu('#5a3d28', (x - w / 2 + w * i / 4, y, z - 0.07), (0.03, h, 0.03))
-    else:
-        p.kutu('#2a3440', (x + 0.02, y, z), (0.04, h, w))
-        p.kutu(KIRIS, (x + 0.05, y + h / 2 + 0.05, z), (0.1, 0.1, w + 0.2))
-        p.kutu(KIRIS, (x + 0.06, y - h / 2 - 0.05, z), (0.14, 0.1, w + 0.25))
+    else:  # yan yüz: x>0 ise +x, x<0 ise -x yüzü
+        sx = 1 if x >= 0 else -1
+        p.kutu('#2a3440', (x + sx * 0.02, y, z), (0.04, h, w))
+        p.kutu(KIRIS, (x + sx * 0.05, y + h / 2 + 0.05, z), (0.1, 0.1, w + 0.2))
+        p.kutu(KIRIS, (x + sx * 0.06, y - h / 2 - 0.05, z), (0.14, 0.1, w + 0.25))
         for s in (-1, 1):
-            p.kutu(KIRIS, (x + 0.05, y, z + s * (w / 2 + 0.04)), (0.1, h, 0.08))
-        p.kutu(KIRIS, (x + 0.05, y, z), (0.06, h, 0.05))
+            p.kutu(KIRIS, (x + sx * 0.05, y, z + s * (w / 2 + 0.04)), (0.1, h, 0.08))
+        p.kutu(KIRIS, (x + sx * 0.05, y, z), (0.06, h, 0.05))
+        if kafes:
+            for i in range(1, 6):
+                p.kutu('#5a3d28', (x + sx * 0.07, y - h / 2 + h * i / 6, z), (0.03, 0.03, w))
 
 
 def kalcali_cati(p, cx, cz, W, D, y, h, sacak=0.8):
@@ -301,6 +305,7 @@ def osmanli_evi(kok, W=6.0, D=5.0, cikma=0.8, cumba=True, siva=SIVA, balkon=Fals
     p.top(ALTIN, (-W * 0.18 + 0.3, 1.5, -D / 2 - 0.08), 0.08, u=6, v=4, maden=True)
     pencere(p, W * 0.25, 1.75, -D / 2, 0.7, 0.9, 'on', kafes=True)
     pencere(p, W / 2, 1.75, 0.0, 0.7, 0.9, 'yan', kafes=True)
+    pencere(p, -W / 2, 1.75, 0.6, 0.7, 0.9, 'yan', kafes=True)
     if tek:
         kalcali_cati(p, 0, 0, W, D, h1 + 0.1, 1.5, 0.7)
         p.nesne(kok)
@@ -311,6 +316,8 @@ def osmanli_evi(kok, W=6.0, D=5.0, cikma=0.8, cumba=True, siva=SIVA, balkon=Fals
     p.kutu(siva, (0, ust_y + h2 / 2, (z0 + z1) / 2), (W, h2, z1 - z0))
     # payandalar (çıkma altı eğik destekler)
     for x in [(-W / 2 + 0.15) + i * (W - 0.3) / 4 for i in range(5)]:
+        if abs(x + W * 0.18) < 0.75:  # kapının önüne gelmesin
+            x = -W * 0.18 + (0.75 if x > -W * 0.18 else -0.75)
         kalas(p, (x, h1 - 0.9, -D / 2 - 0.02), (x, ust_y, z0 + 0.12), 0.16)
         p.kutu(KIRIS, (x, ust_y - 0.05, (z0 - D / 2) / 2), (0.14, 0.12, cikma + 0.1))
     # ahşap çatkı: köşe dikmeleri, alt/üst kuşak, çaprazlar
@@ -330,6 +337,7 @@ def osmanli_evi(kok, W=6.0, D=5.0, cikma=0.8, cumba=True, siva=SIVA, balkon=Fals
         pencere(p, x, ust_y + h2 * 0.5, z0, 0.62, 1.25, 'on', kafes=(i % 2 == 0))
     for z in ((z0 + z1) / 2 - 1.0, (z0 + z1) / 2 + 1.0):
         pencere(p, W / 2, ust_y + h2 * 0.5, z, 0.62, 1.25, 'yan')
+        pencere(p, -W / 2, ust_y + h2 * 0.5, z, 0.62, 1.25, 'yan', kafes=True)
     # çaprazlar (pencere aralarında)
     for x in (-W / 2 + 0.05, W / 2 - 0.05):
         pass
@@ -374,7 +382,7 @@ def osmanli_evi(kok, W=6.0, D=5.0, cikma=0.8, cumba=True, siva=SIVA, balkon=Fals
 def yapi_listesi():
     """(ad, kur, (kamera, hedef))"""
     return [
-        ('kadirga', kadirga, ((-38, 22, -40), (0, 2, 8))),
+        ('kadirga', kadirga, [((-38, 22, -40), (0, 2, 8)), ((-42, 2.5, 4), (0, 1.5, 6)), ((-16, 6, 58), (0, 3, 40))]),
         ('ev-1', lambda r: osmanli_evi(r), ((-9, 6, -12), (0, 3, 0))),
         ('ev-2', lambda r: osmanli_evi(r, W=7.5, D=5.5, cikma=1.0, cumba=False, siva='#eadcb8', balkon=True), ((-10, 6, -13), (0, 3, 0))),
         ('ev-3', lambda r: osmanli_evi(r, W=5.0, D=4.4, cikma=0.7, cumba=True, siva='#f0e2d8'), ((-8, 6, -11), (0, 3, 0))),

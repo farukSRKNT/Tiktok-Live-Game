@@ -29,4 +29,6 @@ for ad, kur, *kam in isler:
         if k is None:
             atli = ad.startswith(('padisah', 'ibrahim', 'sipahi'))
             k = ((-3.4, 2.8, -4.8), (0, 1.7, 0)) if atli else ((-2.6, 2.6, -4.4), (0, 1.5, 0))
-        onizle(os.path.join(ONIZ, ad + '.png'), k[0], k[1])
+        kamlar = k if isinstance(k, list) else [k]
+        for i, kk in enumerate(kamlar):
+            onizle(os.path.join(ONIZ, ad + ('' if i == 0 else '-%d' % (i + 1)) + '.png'), kk[0], kk[1])
