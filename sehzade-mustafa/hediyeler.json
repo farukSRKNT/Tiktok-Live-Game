@@ -1,0 +1,18 @@
+{
+  "_aciklama": [
+    "Şehzade Mustafa'nın Cenazesi hediye kuralları. Kaydedip sayfayı yenilemen yeterli.",
+    "eylem (değiştirme): tabut | sancak | sipahi | dua | yagmur | tekbir",
+    "etiket: ekranda görünen ad. jeton: hediyenin jeton değeri. minJeton: bu değer ve üstü (listede olmayan) her hediye.",
+    "ikon: emoji (gerçek hediye resmi öğrenilince o görünür).",
+    "ad / id: TikTok'taki hediye adı / ID'si (kontrol panelindeki 'Hediye kaydı'ndan bak). Boşsa sadece jeton değerine göre eşleşir.",
+    "Yorum yazan ya da beğenen herkes alaya yeniçeri olarak katılır. İlk gelen 6 kişi tabutu omuzlar, sonraki 2 kişi sancak taşır; hediye atan onların yerini alır."
+  ],
+  "kurallar": [
+    { "eylem": "tabut",  "etiket": "Tabutu Omuzla",  "jeton": 1,   "ikon": "🌹", "ad": ["Rose", "Gül"], "id": ["5655"] },
+    { "eylem": "sancak", "etiket": "Sancaktar Ol",   "jeton": 10,  "ikon": "🚩", "ad": [], "id": [] },
+    { "eylem": "sipahi", "etiket": "Atlı Sipahi Ol", "jeton": 30,  "ikon": "🐎", "ad": [], "id": [] },
+    { "eylem": "dua",    "etiket": "Fatiha Oku",     "jeton": 99,  "ikon": "🤲", "ad": [], "id": [] },
+    { "eylem": "yagmur", "etiket": "Gök Ağlasın",    "jeton": 199, "ikon": "🌧️", "ad": [], "id": [] },
+    { "eylem": "tekbir", "etiket": "Tekbir",         "minJeton": 1000, "ikon": "🕌", "ad": [], "id": [] }
+  ]
+}

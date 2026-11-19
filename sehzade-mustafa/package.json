@@ -1,0 +1,16 @@
+{
+  "name": "sehzade-mustafa",
+  "version": "0.1.0",
+  "private": true,
+  "description": "TikTok LIVE icin etkilesimli Sehzade Mustafa cenaze alayi: Eregli'den Bursa'ya (3D)",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "three": "^0.170.0",
+    "tiktok-live-connector": "^2.5.0"
+  }
+}
