@@ -166,6 +166,14 @@ function animInsan(U, ph, amp, t) {
     p.needsUpdate = true;
   }
 }
+// oturup kürek çekme: bacaklar öne, gövde ileri-geri, iki kol kürek sapını çeker
+function kurekCek(U, ph) {
+  const s = Math.sin(ph);
+  U.govde.position.y = -0.46;
+  U.govde.rotation.x = s * 0.22;
+  U.bacakL.rotation.set(-1.45, 0, 0.08); U.bacakR.rotation.set(-1.45, 0, -0.08);
+  U.kolL.rotation.set(-1.15 + s * 0.45, 0, 0.12); U.kolR.rotation.set(-1.15 + s * 0.45, 0, -0.12);
+}
 function animAt(A, ph, amp) {
   const s = Math.sin(ph), c = Math.cos(ph);
   A.bacak[0].rotation.x = s * 0.5 * amp; A.bacak[3].rotation.x = s * 0.5 * amp;
@@ -209,8 +217,16 @@ export function createAlay(scene) {
 
   // Dizilim: herkes padişah ve İbrahim Paşa'nın ARKASINDA. Hediye toplamı büyük olan en yakında,
   // hediyesizler en geride (önce gelen önde). Yayalar 3'lü, atlılar 2'li sıra.
+  // Kürek: gemi alayla giderken yeniçeriler iki yandaki sıralara ikişer-üçer oturup kürek çeker (kadırga yerel koordinatı).
+  const KUREK_YER = [];
+  for (let z = 0, i = 0; z <= 36; z += 2, i++) for (const s of [-1, 1]) for (const x of (i % 2 ? [2.85, 3.4, 3.95] : [3.1, 3.7])) KUREK_YER.push({ x: s * x, z });
   A.dizil = () => {
-    const sirali = [...A.uyeler].sort((a, b) => (b.puan || 0) - (a.puan || 0) || (a.joinT ?? 0) - (b.joinT ?? 0));
+    for (const u of A.uyeler) u.kurekYer = null;
+    if (A.kurekModu) {
+      const kurekci = A.uyeler.filter((u) => u.rol === 'yeniceri').sort((a, b) => (a.joinT ?? 0) - (b.joinT ?? 0));
+      kurekci.slice(0, KUREK_YER.length).forEach((u, i) => { const y = KUREK_YER[i]; u.kurekYer = y; u.hedef = new THREE.Vector3(y.x, 0, y.z + (A.gemiZ || 0)); });
+    }
+    const sirali = [...A.uyeler].filter((u) => !u.kurekYer).sort((a, b) => (b.puan || 0) - (a.puan || 0) || (a.joinT ?? 0) - (b.joinT ?? 0));
     let z = 6.2, satir = [], tip = null;
     const kapat = () => {
       if (!satir.length) return;
@@ -232,7 +248,7 @@ export function createAlay(scene) {
     let h = 0; for (const c of String(u.id)) h = (h * 31 + c.charCodeAt(0)) | 0;
     h = Math.abs(h);
     const sayi = A.uyeler.filter((x) => x.rol === rol && x !== u).length;
-    u.ch = glbFigur(rol) || figur(rol, sayi, h);
+    u.ch = glbFigur(rol, sayi, h) || figur(rol, sayi, h);
     u.rol = rol; u.faz = (h % 100) / 100 * 0.6;
     u.bas = u.ch.userData.bas || u.ch;
     if (!A.uyeler.includes(u)) A.uyeler.push(u);
@@ -249,7 +265,10 @@ export function createAlay(scene) {
   A.sayi = (rol) => A.uyeler.filter((u) => u.rol === rol).length;
 
   // her kare
-  A.update = (dt, hiz, t, denizde) => {
+  A.update = (dt, hiz, t, denizde, gemi) => {
+    const kurek = !!(gemi && gemi.bagli);
+    A.gemiZ = gemi ? gemi.z : 0;
+    if (kurek !== !!A.kurekModu) { A.kurekModu = kurek; A.dizil(); }
     // adım hızı yürüyüş hızına bağlı; denizde (mavnada) durup sallanırlar
     const amp = denizde ? 0.08 : Math.min(1.2, 0.55 + hiz * 0.18);
     A.ph += dt * (denizde ? 1 : 3.2 + hiz * 1.6);
@@ -263,6 +282,11 @@ export function createAlay(scene) {
         c.position.lerp(u.hedef, k);
       }
       const U = c.userData;
+      if (u.kurekYer && A.kurekModu && !U.at && U.govde) { // yerine varınca oturup kürek çeker (kıça bakar)
+        const yerde = c.position.distanceTo(u.hedef) < 0.35;
+        c.rotation.y += ((yerde ? Math.PI : 0) - c.rotation.y) * Math.min(1, dt * 4);
+        if (yerde) { kurekCek(U, A.ph * 0.45 + (u.kurekYer.z * 0.02)); continue; }
+      } else if (c.rotation.y !== 0 || (U.govde && U.govde.rotation.x)) { c.rotation.y = 0; if (U.govde) { U.govde.rotation.x = 0; U.bacakL.rotation.z = 0; U.bacakR.rotation.z = 0; } }
       if (U.mixer) U.mixer.update(dt * (0.6 + hiz * 0.3));
       else if (U.at) { animAt(U.at, A.ph * 0.5 + u.faz * 6, amp); animInsan(U.binici, A.ph + u.faz, amp, t); }
       else animInsan(U, A.ph + u.faz * 3, amp, t);
@@ -277,14 +301,35 @@ export function createAlay(scene) {
   // padisah.glb, ibrahim.glb: binici+at tamamı; yeniceri.glb, mehter.glb, sancak.glb, musahip.glb, sipahi.glb
   // İsteğe bağlı modeller/ayar.json: { "padisah": { "boy": 3.2, "y": 0, "don": 180 } }
   const BOY = { padisah: 3.2, ibrahim: 3.1, sipahi: 3.0, yeniceri: 1.85, mehter: 1.85, sancak: 1.85, musahip: 1.85 };
+  // İskeletli (parça adlı) model: govde/kolL/kolR/bacakL/bacakR/bas (+ at_govde/at_boyun/at_kuyruk/at_bacak0..3).
+  // Bu adlar varsa kodla yapılan figürlerle aynı animasyonlar (yürüyüş, selam, çok yaşa, bayrak) oynar.
+  function iskelet(o) {
+    const n = {}; o.traverse((k) => { if (k.name && !n[k.name]) n[k.name] = k; });
+    if (!n.govde) return null;
+    const B = { govde: n.govde, kolL: n.kolL, kolR: n.kolR, bacakL: n.bacakL, bacakR: n.bacakR, bas: n.bas };
+    if (!B.kolL || !B.kolR || !B.bacakL || !B.bacakR || !B.bas) return null;
+    if (n.bayrak && n.bayrak.isMesh) { n.bayrak.geometry = n.bayrak.geometry.clone(); B.bayrak = n.bayrak; B.sancakKol = true; }
+    if (n.zurna) B.zurna = true;
+    if (!n.at_govde) return { U: B, bas: B.bas };
+    B.atli = true;
+    const At = { govde: n.at_govde, boyun: n.at_boyun, kuyruk: n.at_kuyruk, bacak: [0, 1, 2, 3].map((i) => n['at_bacak' + i]) };
+    if (!At.boyun || !At.kuyruk || At.bacak.some((x) => !x)) return null;
+    return { U: { binici: B, at: At, bas: B.bas }, bas: B.bas };
+  }
   function hazirla(key) {
     const src = A.glb[key]; if (!src) return null;
     const o = SkeletonUtils.clone(src.scene);
     const wrap = new THREE.Group(); wrap.add(o);
     const a = src.ayar || {};
     o.scale.setScalar(src.olcek); o.position.y = src.yOff + (a.y || 0);
-    o.rotation.y = THREE.MathUtils.degToRad(a.don != null ? a.don : 180);
+    o.rotation.y = THREE.MathUtils.degToRad(a.don != null ? a.don : src.rig ? 0 : 180);
     o.traverse((k) => { if (k.isMesh) { k.castShadow = true; k.receiveShadow = true; } });
+    const r = src.rig && iskelet(o);
+    if (r) { // oyun kendisi canlandırır
+      if (r.U.bayrak) r.U.bayrak.castShadow = false;
+      wrap.userData = r.U; wrap.userData.bas = r.bas;
+      return wrap;
+    }
     if (src.anims.length) {
       const mixer = new THREE.AnimationMixer(o);
       const clip = src.anims.find((c) => /walk|yuru|yürü|ride|gallop|trot|run/i.test(c.name)) || src.anims[0];
@@ -294,7 +339,12 @@ export function createAlay(scene) {
     const bas = new THREE.Object3D(); bas.position.y = src.boy * 0.92; wrap.add(bas); wrap.userData.bas = bas;
     return wrap;
   }
-  function glbFigur(rol) { return hazirla(rol); }
+  // Aynı rolün çeşitleri: yeniceri.glb, yeniceri-2.glb ... (mehter: davul/zurna/zil sırayla, diğerleri kişiye göre)
+  function glbFigur(rol, i = 0, h = 0) {
+    const c = Object.keys(A.glb).filter((k) => k === rol || k.startsWith(rol + '-')).sort();
+    if (!c.length) return null;
+    return hazirla(c[(rol === 'yeniceri' ? h : i) % c.length]);
+  }
   A.loadModels = async () => {
     let list = [], ayar = {};
     try { list = (await (await fetch('/api/models')).json()).models || []; } catch {}
@@ -302,14 +352,16 @@ export function createAlay(scene) {
     try { ayar = await (await fetch('/modeller/ayar.json')).json(); } catch {}
     const loader = new GLTFLoader();
     for (const f of list) {
-      const key = f.replace(/\.(glb|gltf)$/i, '').toLocaleLowerCase('tr');
-      if (!BOY[key]) continue;
+      const key = f.replace(/\.(glb|gltf)$/i, '').toLocaleLowerCase('tr'), kok = key.split('-')[0];
+      if (!BOY[kok]) continue;
       try {
         const gl = await loader.loadAsync('/modeller/' + encodeURIComponent(f));
-        const a = ayar[key] || {};
+        const a = ayar[key] || ayar[kok] || {};
+        let rig = false; gl.scene.traverse((k) => { if (k.name === 'govde') rig = true; });
         const box = new THREE.Box3().setFromObject(gl.scene), size = box.getSize(new THREE.Vector3());
-        const boy = a.boy || BOY[key], olcek = size.y > 0 ? boy / size.y : 1;
-        A.glb[key] = { scene: gl.scene, anims: gl.animations || [], ayar: a, olcek, yOff: -box.min.y * olcek, boy };
+        // iskeletli modeller oyun ölçüsünde yapılır: boyu olduğu gibi kalır (ayar.json'da "boy" verilmezse)
+        const boy = a.boy || (rig ? size.y : BOY[kok]), olcek = size.y > 0 ? boy / size.y : 1;
+        A.glb[key] = { scene: gl.scene, anims: gl.animations || [], ayar: a, olcek, yOff: rig ? 0 : -box.min.y * olcek, boy, rig };
         console.log(`[model] ${f} yüklendi (${gl.animations.length} animasyon)`);
       } catch (e) { console.warn('[model] yüklenemedi:', f, e); }
     }
@@ -317,7 +369,7 @@ export function createAlay(scene) {
     for (const k of ['padisah', 'ibrahim']) {
       const w = hazirla(k); if (!w) continue;
       const old = A[k]; w.position.copy(old.position); A.root.remove(old); A.root.add(w);
-      w.userData.binici = { kolL: new THREE.Object3D(), kolR: new THREE.Object3D() }; // selam animasyonu yok sayılır
+      if (!w.userData.at) w.userData.binici = { kolL: new THREE.Object3D(), kolR: new THREE.Object3D() }; // iskeletsiz modelde selam yok sayılır
       A[k] = w; A[k + 'Bas'] = w.userData.bas;
     }
     for (const u of [...A.uyeler]) if (A.glb[u.rol]) A.ekle(u, u.rol);

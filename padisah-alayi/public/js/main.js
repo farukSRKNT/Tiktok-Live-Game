@@ -84,6 +84,7 @@ let yapiDurak = null;
 fetch('/api/rules').then((r) => r.json()).then((j) => { if (Array.isArray(j.kurallar) && j.kurallar.length) G.rules = j.kurallar; UI.renderRuleButtons(); }).catch(() => UI.renderRuleButtons());
 UI.renderRuleButtons();
 alay.loadModels();
+world.loadModels();
 
 // kaldığı yerden devam: sunucudaki son durumu yükle, sonra birkaç saniyede bir kaydet
 let kayitHazir = !SSE;
@@ -135,7 +136,7 @@ function loop() {
   world.update(G.s, G.dir, dt, t);
   world.setDay(((t / DAY) + 0.08) % 1);
   const denizde = world.biyom === 'deniz';
-  alay.update(dt, G.hiz, t, denizde);
+  alay.update(dt, G.hiz, t, denizde, world.gemi);
   // son sıranın z'si (arka çekimler için) ve yaklaşan yapının yeri
   let son = 8; for (const u of alay.uyeler) if (u.hedef && u.hedef.z > son) son = u.hedef.z;
   const P = { son, denizde, varis: G.durum === 'varis' };

@@ -103,12 +103,15 @@ const loadLib = async () => {
 };
 
 // TikTok'un ham mesajlarını oyunun olay formatına çevir (kütüphane sürümüne göre alan adları değişebiliyor)
+const AVATAR = new Map(); // profil resmi önbelleği (url → {type, buf})
 function userOf(d) {
   const u = (d && d.user) || {};
   const handle = u.uniqueId || u.displayId || '';
   const id = String(handle || u.userId || u.id || '');
   if (!id) return null;
-  return { id: 'tt_' + id, nick: String(u.nickname || handle || id).slice(0, 24) };
+  const pp = u.profilePicture || u.avatarThumb || u.avatar_thumb || u.avatarMedium || u.profilePictureUrl;
+  const avatar = typeof pp === 'string' ? pp : imageOf(pp);
+  return { id: 'tt_' + id, nick: String(u.nickname || handle || id).slice(0, 24), ...(avatar ? { avatar } : {}) };
 }
 function imageOf(img) {
   if (!img) return '';
@@ -296,7 +299,27 @@ http.createServer(async (req, res) => {
     if (ev && typeof ev.type === 'string') broadcast(ev);
     return json(res, { ok: true });
   }
-  if (p === '/api/rules') { // hediyeler.json her istekte okunur: düzenleyip sayfayı yenilemek yeter
+  if (p === '/api/avatar') { // izleyici profil resmi: TikTok CDN'den alınıp aynı adresten verilir (önbellekli)
+    let src = '';
+    try { src = new URL(new URL(req.url, 'http://x').searchParams.get('u') || ''); } catch {}
+    if (!src || src.protocol !== 'https:' || !/(^|\.)(tiktokcdn(-[a-z]+)?\.com|tiktokcdn\.com|ibyteimg\.com|tiktokv\.com|byteimg\.com)$/i.test(src.hostname)) { res.writeHead(400); return res.end(); }
+    const key = src.href;
+    let hit = AVATAR.get(key);
+    if (!hit) {
+      try {
+        const r = await fetch(key, { headers: { 'User-Agent': 'Mozilla/5.0' } });
+        const type = r.headers.get('content-type') || 'image/jpeg';
+        if (!r.ok || !/^image\//.test(type)) throw new Error('resim değil');
+        const buf = Buffer.from(await r.arrayBuffer());
+        if (buf.length > 600000) throw new Error('çok büyük');
+        hit = { type, buf };
+        AVATAR.set(key, hit);
+        if (AVATAR.size > 400) AVATAR.delete(AVATAR.keys().next().value);
+      } catch { res.writeHead(404); return res.end(); }
+    }
+    res.writeHead(200, { 'Content-Type': hit.type, 'Cache-Control': 'public, max-age=86400' });
+    return res.end(hit.buf);
+  }  if (p === '/api/rules') { // hediyeler.json her istekte okunur: düzenleyip sayfayı yenilemek yeter
     try {
       const data = JSON.parse(fs.readFileSync(path.join(__dirname, 'hediyeler.json'), 'utf8'));
       const imgs = readImages();
