@@ -97,14 +97,15 @@ export function createUI(G, camera, alay, hooks) {
         let y = p.y;
         if (it.vip) { pill(p.x, y, it.vip, it.renk, '#fff', 26 * k); continue; }
         const rol = u.rol && u.rol !== 'yeniceri' ? { mehter: '🥁 Mehter', sancak: '🚩 Sancaktar', musahip: '👑 Musahip', sipahi: '🐎 Sipahi' }[u.rol] : null;
-        const avi = avatarImg(u.avatar), fs = 22 * k;
+        const vurgu = u.vurguBitis > G.time, etRenk = vurgu ? 'rgba(196,132,18,.97)' : 'rgba(30,18,8,.74)'; // rol değişimi gösterilen kişi
+        const avi = avatarImg(u.avatar), fs = 22 * k * (vurgu ? 1.35 : 1);
         if (avi) { // isim etiketinin solunda yuvarlak profil resmi
           ctx.font = `800 ${fs}px ${FONT}`; const w = ctx.measureText(u.nick).width + fs * 1.1, hh = fs * 1.6;
           const X = clamp(p.x - w / 2 + hh * 0.6, 4 + hh * 1.2, W - w - 4);
-          pill(X + w / 2, y, u.nick, 'rgba(30,18,8,.74)', '#fff', fs);
+          pill(X + w / 2, y, u.nick, etRenk, '#fff', fs);
           avatarCiz(avi, X - hh * 0.55, y - hh / 2, hh * 0.72);
           y -= hh + 4;
-        } else y -= pill(p.x, y, u.nick, 'rgba(30,18,8,.74)', '#fff', fs) + 4;
+        } else y -= pill(p.x, y, u.nick, etRenk, '#fff', fs) + 4;
         if (rol) y -= pill(p.x, y, rol, 'rgba(232,194,90,.96)', '#3a2300', 20 * k) + 4;
         const b = u.bubble;
         if (b) {
@@ -254,7 +255,8 @@ export function createUI(G, camera, alay, hooks) {
   });
   G.on('announce', (t) => { aq.push(t); if (aq.length > 8) aq.splice(0, aq.length - 8); });
   G.on('banner', (b) => {
-    bq.push(b); if (bq.length > 10) bq.shift();
+    if (b.rol) { bq.unshift(b); bT = 0; } // rol değişimi afişi kamerayla aynı anda, hemen çıkar
+    else { bq.push(b); if (bq.length > 10) bq.splice(bq.findIndex((x) => !x.rol), 1); }
     if (!b.auto && window.CD.audio && window.CD.audio.fanfare) window.CD.audio.fanfare(true);
   });
   G.on('focus', (name) => hooks.onFocus(name));
@@ -267,7 +269,7 @@ export function createUI(G, camera, alay, hooks) {
     const line = b.total ? `${b.text} · ${fmt(b.total)} 💎` : b.text;
     el.innerHTML = `<div class="bn${b.auto ? ' auto' : ''}"><div class="bn-ic">${ic}</div><div><div class="bn-n">${esc(b.user.nick)}</div><div class="bn-g">${esc(sub)}</div><div class="bn-t">${esc(line)}</div></div></div>`;
     banOn = true;
-    return b.auto ? 2.6 : 3.6;
+    return b.rol ? 3.2 : b.auto ? 2.6 : 3.6;
   }
 
   UI.tick = (dt, haritaA) => {

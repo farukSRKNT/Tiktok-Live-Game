@@ -79,6 +79,41 @@ const UI = createUI(G, camera, alay, {
   director,
 });
 G.on('yapi', (d) => { yapiDurak = d; director.focusOn(d.yapi === 'kopru' ? 'yan' : 'yapi', 8); });
+
+// ---------- rol değişimi sırası ----------
+// Rol değiştiren herkes (hediye, yorum, ilk gelen, yerini veren) sırayla kamerada gösterilir: kamera kişiye yaklaşır,
+// kişi yeni yerine yürürken izlenir, afiş çıkar. Aynı anda gelenler kuyrukta bekler, hiçbiri atlanmaz.
+// Sıra boşken yorum yapana kısa bir yakın çekim yapılır (yaklaşıp uzaklaşır).
+const ROL_AD = { yeniceri: 'Yeniçeri', mehter: 'Mehter', sancak: 'Sancaktar', sipahi: 'Atlı sipahi', musahip: 'Musahip' };
+const ROL_IK = { yeniceri: '⚔️', mehter: '🥁', sancak: '🚩', sipahi: '🐎', musahip: '👑' };
+const rolKuyruk = [];
+let rolAktif = null, yorumT = -99;
+G.rolKuyruk = rolKuyruk;
+G.on('rolDegisti', (e) => {
+  const i = rolKuyruk.findIndex((x) => x.u === e.u);
+  if (i >= 0) rolKuyruk[i] = e; else rolKuyruk.push(e); // aynı kişi iki kez değiştiyse son hali gösterilir
+});
+G.on('yorumOdak', (u) => {
+  if (rolAktif || rolKuyruk.length || director.cur === 'harita' || director.cur === 'yapi') return;
+  if (G.time - yorumT < 7 || !u.ch) return; // art arda yorumlarda kamera çırpınmasın
+  if (director.kisiyeOdakla(() => u.ch, 4, 'yorum')) yorumT = G.time;
+});
+function rolSirasi(dt) {
+  if (rolAktif) { rolAktif.k += dt; if (rolAktif.k < rolAktif.sure) return; rolAktif.e.u.vurguBitis = 0; rolAktif = null; }
+  while (rolKuyruk.length) {
+    const e = rolKuyruk.shift();
+    if (!e.u.ch || e.u.rol !== e.rol) continue; // alaydan çıkmış ya da yeniden değişmiş (yenisi kuyrukta)
+    const sure = rolKuyruk.length > 5 ? 3.2 : 4.6; // kuyruk uzunsa biraz hızlanır ama kimse atlanmaz
+    rolAktif = { e, k: 0, sure };
+    e.u.vurguBitis = G.time + sure;
+    director.kisiyeOdakla(() => e.u.ch, sure, 'rol');
+    const sub = e.neden === 'verdi' ? 'Yerini yeni gelene bıraktı' : e.neden === 'ilk' ? 'İlk gelenlerden! Hediye atan yerini alır.'
+      : e.yerine ? `${e.yerine} yerine geçti` : e.neden === 'hediye' ? 'Hediyeyle yerini aldı' : 'Yorumla yerini aldı';
+    G.emit('banner', { rol: true, auto: e.neden === 'ilk' || e.neden === 'verdi', user: e.u, gift: { icon: ROL_IK[e.rol] }, sub,
+      text: `${ROL_IK[e.rol]} ${ROL_AD[e.rol]} oldu!${rolKuyruk.length ? ` · sırada ${rolKuyruk.length} kişi` : ''}` });
+    break;
+  }
+}
 let yapiDurak = null;
 
 fetch('/api/rules').then((r) => r.json()).then((j) => { if (Array.isArray(j.kurallar) && j.kurallar.length) G.rules = j.kurallar; UI.renderRuleButtons(); }).catch(() => UI.renderRuleButtons());
@@ -141,6 +176,7 @@ function loop() {
   let son = 8; for (const u of alay.uyeler) if (u.hedef && u.hedef.z > son) son = u.hedef.z;
   const P = { son, denizde, varis: G.durum === 'varis' };
   if (yapiDurak) { P.yapiZ = -(yapiDurak.s - G.s) * G.dir; P.yapiX = -24; if (P.yapiZ > 30) yapiDurak = null; }
+  rolSirasi(dt);
   director.update(dt, P);
   composer.render();
   map.draw(director.harita, director.haritaZoom, G.s, G.dir);

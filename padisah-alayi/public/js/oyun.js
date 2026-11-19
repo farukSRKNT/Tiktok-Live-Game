@@ -66,7 +66,7 @@ export function createGame(alay) {
     alay.ekle(u, rol);
     u.autoRole = rol !== 'yeniceri';
     u.welcomeT = G.time;
-    if (u.autoRole) G.emit('banner', { auto: true, user: u, gift: { icon: rol === 'mehter' ? '🥁' : '🚩' }, sub: rol === 'mehter' ? 'Mehter takımına katıldı!' : 'Sancağı taşıyor!', text: 'İlk gelenlerden! Hediye atan yerini alır.' });
+    if (u.autoRole) G.emit('rolDegisti', { u, rol, neden: 'ilk' }); // sırayla kamerada gösterilir
     G.emit('feed', { kind: 'join', user: u, text: `alaya katıldı (${ROL[rol].ad})` });
     return true;
   }
@@ -76,10 +76,12 @@ export function createGame(alay) {
     if (alay.sayi(rol) >= ROL[rol].max) {
       // önce yorumla/otomatik gelenin, sonra en eski hediyecinin yerini alır
       const aday = alay.uyeler.filter((x) => x.rol === rol && x !== u).sort((a, b) => (!!a.hediyeRol - !!b.hediyeRol) || (b.autoRole - a.autoRole) || (a.rolT - b.rolT))[0];
-      if (aday) { aday.autoRole = false; aday.hediyeRol = false; alay.ekle(aday, 'yeniceri'); aday.rolT = G.time; }
+      if (aday) { aday.autoRole = false; aday.hediyeRol = false; alay.ekle(aday, 'yeniceri'); aday.rolT = G.time; var verdi = aday; }
     }
     if (u.rol) alay.ekle(u, rol); else { alay.ekle(u, rol); u.welcomeT = G.time; }
     u.autoRole = false; u.rolT = G.time; u.hediyeRol = true;
+    G.emit('rolDegisti', { u, rol, neden: 'hediye', yerine: verdi ? verdi.nick : null });
+    if (verdi) G.emit('rolDegisti', { u: verdi, rol: 'yeniceri', neden: 'verdi' });
   }
 
   // Yorumla rol (hediyesiz oynanabilsin): kişi başı 30 sn bekleme. Hediyeyle alınmış yer elden alınamaz.
@@ -91,14 +93,18 @@ export function createGame(alay) {
     const kalan = Math.ceil(ROL_BEKLE - (G.time - (u.yorumRolT ?? -99)));
     if (kalan > 0) return `${ik} ${ad} (${kalan} sn bekle)`;
     if (u.hediyeRol && G.time - u.rolT < 120) return `${ik} ${ad} (hediyeyle aldığı rolü 2 dk bırakamaz)`;
+    let yerineGecti = null;
     if (rol !== 'yeniceri' && alay.sayi(rol) >= ROL[rol].max) {
       const aday = alay.uyeler.filter((x) => x.rol === rol && !x.hediyeRol && G.time - (x.rolT || 0) > ROL_BEKLE).sort((a, b) => (b.autoRole - a.autoRole) || (a.rolT - b.rolT))[0];
       if (!aday) return `${ik} ${ad} (yer dolu, hediyeyle alınabilir)`;
       aday.autoRole = false; alay.ekle(aday, 'yeniceri'); aday.rolT = G.time;
       G.emit('announce', `${ik} ${u.nick}, ${aday.nick}'in yerine geçti!`);
+      yerineGecti = aday;
     } else G.emit('announce', rol === 'yeniceri' ? `⚔️ ${u.nick} yeniçeri saflarına döndü` : `${ik} ${u.nick} artık ${ad}!`);
     alay.ekle(u, rol);
     u.autoRole = false; u.hediyeRol = false; u.rolT = G.time; u.yorumRolT = G.time;
+    G.emit('rolDegisti', { u, rol, neden: 'yorum', yerine: yerineGecti ? yerineGecti.nick : null });
+    if (yerineGecti) G.emit('rolDegisti', { u: yerineGecti, rol: 'yeniceri', neden: 'verdi' });
     G.emit('chipHit', rol === 'yeniceri' ? 'yorum' : rol);
     return `${ik} ${ad} ✓`;
   }
@@ -119,6 +125,7 @@ export function createGame(alay) {
         G.addEnergy(1.2);
         G.emit('feed', { kind: 'chat', user: u, text });
         command(u, text);
+        G.emit('yorumOdak', u); // sıra boşsa kamera kısa bir an yorum yapana yaklaşır
         break;
       }
       case 'like': {
@@ -205,8 +212,7 @@ export function createGame(alay) {
       case 'sancak': case 'mehter': case 'sipahi': case 'musahip':
         rolVer(u, r.eylem);
         G.emit('announce', `${{ sancak: '🚩', mehter: '🥁', sipahi: '🐎', musahip: '👑' }[r.eylem]} ${u.nick} artık ${ROL[r.eylem].ad.toLocaleLowerCase('tr')}!`);
-        G.emit('focus', 'mehter');
-        break;
+        return; // kamera ve afiş rol sırasından gelir (rolDegisti)
       case 'altin':
         G.fx.push({ type: 'altin', n: 40 + Math.min(80, cnt * 20) }); G.addEnergy(6); alay.selam('padisah', G.time);
         G.emit('announce', `💰 Padişah, ${u.nick} adına halka altın saçtı!`); G.emit('focus', 'padisah');
