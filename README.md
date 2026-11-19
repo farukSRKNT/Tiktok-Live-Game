@@ -4,6 +4,7 @@ TikTok LIVE için üç etkileşimli oyun. İzleyiciler yorum yazarak, beğeni ve
 
 - **canli-dugun**: düğün oyunu (2B). Halay halkası, gelin, damat, takı.
 - **sira-gecesi**: sıra gecesi (3B, hamam böcekleri). Sahnede orkestra, ortada çiğ köfte, etrafında halay, yanlarda masalar.
+- **stadyum-kavgasi**: stadyum taraftar kavgası (3B). Takımının adını yazan (Galatasaray, Fener, Trabzon…) o takımın formasıyla sahaya iner; az olan taraftarlar kalabalık olana saldırır.
 - **padisah-alayi**: padişah alayı (3B). Kanuni Sultan Süleyman atında, İbrahim Paşa arkasında, izleyiciler yeniçeri olarak İstanbul'dan Manisa'ya yürür. Yakın çekim, havadan görüntü, canlı harita ve durak kartları (Üsküdar, İznik, Bursa, Balıkesir, Akhisar…).
 
 Oyun bilgisayarında bir web sayfası olarak çalışır. Küçük bir sunucu, yayındaki yorum, beğeni ve hediyeleri [tiktok-live-connector](https://github.com/zerodytrash/TikTok-Live-Connector) ile okur ve oyuna iletir. Sayfayı TikTok LIVE Studio'da pencere yakalamayla yayına verirsin.
