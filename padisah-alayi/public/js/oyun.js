@@ -245,7 +245,13 @@ export function createGame(alay) {
 
     if (G.durum === 'yol') {
       const eski = G.s;
-      G.s = Math.min(TOPLAM_S, Math.max(0, G.s + G.dir * HIZ * G.hiz * dt));
+      let ds = G.dir * HIZ * G.hiz * dt;
+      if (G.sDuz) { // panel: sahneyle aradaki farkı yumuşakça kapat (geri sıçramadan; en fazla yavaşlar)
+        let k = G.sDuz * Math.min(1, dt * 0.8);
+        if (G.dir * (ds + k) < 0) k = -ds;
+        ds += k; G.sDuz -= k; if (Math.abs(G.sDuz) < 0.01) G.sDuz = 0;
+      }
+      G.s = Math.min(TOPLAM_S, Math.max(0, G.s + ds));
       const dKm = Math.abs(kmAt(G.s) - kmAt(eski));
       for (const u of alay.uyeler) u.km = (u.km || 0) + dKm;
       // durak geçişi (köşe taşı kartı)
@@ -292,7 +298,7 @@ export function createGame(alay) {
   };
   // ---------- durum kaydı (F5 / yeniden açılışta kaldığı yerden) ----------
   G.kaydet = () => ({
-    v: 1, t: Date.now(), s: G.s, dir: G.dir, sefer: G.sefer, durum: G.durum, energy: G.energy, likes: G.likes, diamonds: G.diamonds, sonDurak: G.sonDurak,
+    v: 1, t: Date.now(), s: G.s, dir: G.dir, hiz: G.hiz, sefer: G.sefer, durum: G.durum, energy: G.energy, likes: G.likes, diamonds: G.diamonds, sonDurak: G.sonDurak,
     scores: [...G.scores.values()],
     uyeler: [...alay.uyeler].sort((a, b) => (a.joinT ?? 0) - (b.joinT ?? 0)).map((u) => ({ id: u.id, nick: u.nick, avatar: u.avatar, rol: u.rol, puan: u.puan || 0, km: u.km || 0, autoRole: !!u.autoRole, gifted: !!u.gifted, sessiz: G.time - u.lastAct })),
   });
@@ -313,11 +319,24 @@ export function createGame(alay) {
     return true;
   };
   // kontrol paneli, sahne penceresinin durumuna uyar (iki pencere tek oyun gibi)
+  // Kişi değişince her şeyi baştan kurmaz (takılma yapıyordu): yalnızca gelen/giden/rolü değişen kişiyi işler.
+  // Konum farkı yumuşakça kapatılır; kayıt 2 sn'ye kadar eski olabildiği için aradaki yol da hesaba katılır.
   G.senkron = (d) => {
     if (!d || d.v !== 1) return;
-    const imza = (l) => l.map((x) => x.id + ':' + x.rol + ':' + (x.puan || 0)).sort().join('|');
-    if (imza(d.uyeler || []) !== imza([...alay.uyeler])) { G.yukle(d); return; }
-    if (Math.abs(G.s - d.s) > 3 || G.dir !== d.dir) { G.s = d.s; G.dir = d.dir; }
+    const gelen = new Map((d.uyeler || []).map((x) => [x.id, x]));
+    let degisti = false;
+    for (const u of [...alay.uyeler]) if (!gelen.has(u.id)) { alay.cikar(u); G.users.delete(u.id); degisti = true; }
+    for (const x of d.uyeler || []) {
+      let u = G.users.get(x.id);
+      if (!u) { u = { id: x.id, nick: x.nick, avatar: x.avatar, km: x.km, puan: x.puan, autoRole: x.autoRole, gifted: x.gifted, joinT: G.time, lastAct: G.time - (x.sessiz || 0), rolT: 0 }; G.users.set(u.id, u); }
+      if (x.avatar) u.avatar = x.avatar;
+      if ((u.puan || 0) !== (x.puan || 0)) { u.puan = x.puan; degisti = true; }
+      if (u.rol !== (x.rol || 'yeniceri')) { alay.ekle(u, x.rol || 'yeniceri'); degisti = true; }
+    }
+    if (degisti) alay.dizil();
+    const hedefS = d.s + d.dir * HIZ * (d.hiz || G.hiz) * Math.max(0, (Date.now() - d.t) / 1000) * (d.durum === 'yol' ? 1 : 0);
+    if (G.dir !== d.dir || Math.abs(hedefS - G.s) > 40) { G.s = hedefS; G.dir = d.dir; G.sDuz = 0; }
+    else G.sDuz = hedefS - G.s;
     Object.assign(G, { sefer: d.sefer, energy: d.energy, likes: d.likes, diamonds: d.diamonds, sonDurak: d.sonDurak });
     if (d.durum !== G.durum) { G.durum = d.durum; if (d.durum === 'varis') G.varisT = G.time - 25; }
   };
