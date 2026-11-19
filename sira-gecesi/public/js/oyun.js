@@ -51,14 +51,24 @@ export function createGame(scene, salon) {
     else { u.ch.position.copy(salon.door).add(V((Math.random() - 0.5) * 2, 0, 0)); u.ch.rotation.y = Math.PI; u.ch.userData.state.poz = 'ayak'; u.ch.userData.state.pozT = 1; }
     scene.add(u.ch);
   }
-  function ensure(user) {
+  const HALAY_CMD = /(^|[^a-zçğıöşü])halay/;
+  // rol komutları (yorumda geçmesi yeter; tırnak, büyük/küçük harf, Türkçe karakter fark etmez)
+  const W = '(^|[^a-zçğıöşü])';
+  const CMD = {
+    saz: new RegExp(W + '(saz|ba[gğ]lama)'),
+    darbuka: new RegExp(W + 'darbuka'),
+    kofte: new RegExp(W + '([çc]i[gğ] ?)?k[öo]fte'),
+    sofra: new RegExp(W + '(sofra|masaya|otur)'),
+  };
+  const ROLE_CMD = (t) => HALAY_CMD.test(t) || CMD.saz.test(t) || CMD.darbuka.test(t) || CMD.kofte.test(t) || CMD.sofra.test(t);
+  function ensure(user, noAuto = false) {
     let u = G.users.get(user.id);
     if (u) { u.lastActive = G.time; if (user.nick) u.nick = user.nick; return u; }
     const seed = hash(String(user.id));
     u = { id: user.id, nick: user.nick || 'misafir', seed, cinsiyet: 'erkek', role: null, seat: -1, lastActive: G.time, bubble: null, welcomeT: G.time, spot: null };
     build(u);
     G.users.set(u.id, u);
-    if (!autoFill(u)) toTable(u);
+    if (noAuto || !autoFill(u)) toTable(u);
     // kapıdan yürüyerek gelmesin (çok uzun sürüyordu): yerinin hemen yanında ✨ ile belirip birkaç adımda otursun
     if (u.spot) {
       const p = u.spot.pos, onStage = p.y > 0.1;
@@ -83,7 +93,7 @@ export function createGame(scene, salon) {
     return false;
   }
   function refillRoles() { // biri ayrılınca boşalan yeri masadaki en aktif misafir doldurur
-    const pickActive = () => [...G.users.values()].filter((x) => x.role === 'masa').sort((a, b) => b.lastActive - a.lastActive)[0];
+    const pickActive = () => [...G.users.values()].filter((x) => x.role === 'masa' && !x.choseTable).sort((a, b) => b.lastActive - a.lastActive)[0];
     for (const k of ['saz', 'solist', 'darbuka']) if (!G.orch[k]) { const c = pickActive(); if (!c) return; toOrch(c, k); c.autoRole = true; tellAuto(c, k); }
     while (G.knead.some((x) => !x)) { const c = pickActive(); if (!c) return; toKnead(c); c.autoRole = true; tellAuto(c, 'yogur'); }
   }
@@ -112,7 +122,7 @@ export function createGame(scene, salon) {
     const hi = G.halay.indexOf(u); if (hi >= 0) G.halay.splice(hi, 1);
     const ki = G.knead.indexOf(u); if (ki >= 0) G.knead[ki] = null;
     for (const k in G.orch) if (G.orch[k] === u) G.orch[k] = null;
-    u.leader = false;
+    u.leader = false; u.cmdRole = false; u.choseTable = false;
   }
   // Kalma puanı: son etkileşim zamanı + etkileşim sayısı bonusu; hediye atan korunur, sabit halaycı ilk yer açar
   const keepScore = (u) => (u.npc ? -1e9 : 0) + u.lastActive + Math.min(u.acts || 0, 15) * 20 + (u.gifted ? 1e6 : 0);
@@ -182,7 +192,16 @@ export function createGame(scene, salon) {
     if (!ev || !ev.type) return;
     if (ev.type === 'viewers') { G.viewers = ev.count | 0; return; }
     if (!ev.user || !ev.user.id) return;
-    const u = ensure(ev.user);
+    // Katılım kuralı: salonda olmayan biri hangi olayla içeri girer? (hediye her zaman sokar)
+    //   herkes: yayına giren herkes | yorum+begeni: yorum ya da beğeni atan | begeni: sadece beğeni atan
+    if (ev.live && !G.users.has(ev.user.id) && ev.type !== 'gift') {
+      const mode = G.joinMode || 'herkes';
+      const ok = mode === 'herkes' || ev.type === 'like' || (mode === 'yorum+begeni' && ev.type === 'chat');
+      if (!ok) { if (ev.type === 'member') G.addEnergy(0.4); return; }
+    }
+    // ilk yorumu "halaya katıl" olan sazcı/köfteci yapılmasın (önce "Sazcı sensin" çıkıp kafa karıştırıyordu), doğrudan halaya gitsin
+    const wantsRole = ev.type === 'chat' && ROLE_CMD(String(ev.text || '').toLocaleLowerCase('tr'));
+    const u = ensure(ev.user, wantsRole);
     if (ev.type !== 'member') u.acts = (u.acts || 0) + 1; // yorum, beğeni, hediye, takip, paylaşım
     switch (ev.type) {
       case 'member': G.addEnergy(0.4); break;
@@ -211,18 +230,42 @@ export function createGame(scene, salon) {
   };
 
   function command(u, text) {
-    const t = text.trim().toLocaleLowerCase('tr').replace(/[!.?\s]+$/, '');
-    if (/^(halaya kat[ıi]l(ı|i)?yorum|halaya kat[ıi]l|halay|halaya)$/.test(t)) {
+    // tırnaklı ya da tırnaksız, büyük/küçük harf fark etmez: "Halaya katıl" = halaya katil = HALAYA KATIL
+    const t = text.toLocaleLowerCase('tr').replace(/["'“”‘’«»`]/g, ' ').replace(/\s+/g, ' ').trim().replace(/[!.?,\s]+$/, '');
+    // "Halaya katıl", "halaya gir", "halay 💃", "ben de halaya" ... içinde "halay" geçen her yorum
+    if (HALAY_CMD.test(t)) {
       G.emit('chipHit', 'halay');
       if (u.role === 'halay') return;
-      if (u.role === 'yogur' || ROLE_NAMES[u.role]) return; // rolü varsa bırakmasın
+      // hediyeyle kazanılmış rolü olan bırakmasın; ilk gelince otomatik verilen rol (sazcı, köfteci...) halaya gidebilir, yeri masadan biri doldurur
+      if ((u.role === 'yogur' || ROLE_NAMES[u.role]) && !u.autoRole && !u.cmdRole) return;
       toHalay(u);
       G.emit('announce', `💃 ${u.nick} halaya katıldı!`);
-    } else if (/^(otur|masaya d[öo]n|masaya)$/.test(t)) {
-      if (u.role === 'halay' && !u.leader) { toTable(u); }
-    } else if (/^(kad[ıi]n|k[ıi]z|erkek)$/.test(t)) {
-      G.emit('chipHit', t === 'erkek' ? 'erkek' : 'kadin');
-      const c = t === 'erkek' ? 'erkek' : 'kadin';
+    } else if (CMD.saz.test(t) || CMD.darbuka.test(t)) {
+      // sazcı / bağlamacı / darbukacı: yer boşsa ya da otomatik yerleşmiş biri varsa alır; hediyeyle ya da komutla alınmış yer korunur
+      const key = CMD.saz.test(t) ? 'saz' : 'darbuka';
+      G.emit('chipHit', key);
+      if (G.orch[key] === u) return;
+      const cur = G.orch[key];
+      if (cur && !cur.autoRole) { G.emit('announce', `${ROLE_NAMES[key]} yeri dolu, hediyeyle alabilirsin!`); return; }
+      toOrch(u, key); u.autoRole = false; u.cmdRole = true;
+      G.emit('announce', `${ROLE_NAMES[key]} artık ${u.nick}!`); G.emit('focus', 'orkestra');
+    } else if (CMD.kofte.test(t)) {
+      G.emit('chipHit', 'kofte');
+      if (u.role === 'yogur') return;
+      if (!G.knead.some((x) => !x || x.autoRole)) { G.emit('announce', '🌶️ Çiğ köfte tepsisi dolu, hediyeyle yer açabilirsin!'); return; }
+      toKnead(u); u.autoRole = false; u.cmdRole = true;
+      G.emit('announce', `🌶️ ${u.nick} çiğ köfte yoğurmaya oturdu!`); G.emit('focus', 'cigkofte');
+    } else if (CMD.sofra.test(t)) {
+      // kenardaki sofraya otur (halaybaşı ve başköşe yerinde kalır)
+      G.emit('chipHit', 'sofra');
+      if (u.role === 'masa') { u.choseTable = true; return; }
+      if (u.role === 'baskose' || u.leader) return;
+      toTable(u);
+      u.choseTable = true; // kendi isteğiyle sofrada: boşalan sazcı/köfteci yerine otomatik çağrılmasın
+      if (u.role === 'masa') G.emit('announce', `🍽️ ${u.nick} sofraya oturdu!`);
+    } else if (/(^|[^a-zçğıöşü])(kad[ıi]n|k[ıi]z|erkek)([^a-zçğıöşü]|$)/.test(t)) { // "kadın", "ben kadınım" değil ama "kadın 💃", "erkek olayım" olur
+      const c = /(^|[^a-zçğıöşü])erkek/.test(t) ? 'erkek' : 'kadin';
+      G.emit('chipHit', c === 'erkek' ? 'erkek' : 'kadin');
       if (u.cinsiyet === c || u.swap) return;
       if (u.role === 'halay' && !u.leader) {
         // halaydan çıkar, kenarda değişir, sıranın sonundan geri katılır

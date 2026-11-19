@@ -5,8 +5,10 @@
     "etiket: ekranda görünen ad. jeton: hediyenin jeton değeri. minJeton: bu değer ve üstü (listede olmayan) her hediye.",
     "ikon: sağ sütunda görünen emoji (gerçek hediye resmi öğrenilince o görünür).",
     "ad / id: TikTok'taki hediye adı / ID'si (kontrol panelindeki 'Hediye kaydı'ndan bak). Boşsa sadece jeton değerine göre eşleşir.",
-    "İlk gelenler sazcı, solist, darbukacı ve çiğ köfteci olarak sahneyi kurar; hediye atan onların yerini alır."
+    "İlk gelenler sazcı, solist, darbukacı ve çiğ köfteci olarak sahneyi kurar; hediye atan onların yerini alır.",
+    "katilim: salona kim girer? \"yorum+begeni\" = yorum yazan ya da beğeni atan | \"begeni\" = sadece beğeni atan | \"herkes\" = yayına giren herkes. Hediye atan her zaman girer."
   ],
+  "katilim": "yorum+begeni",
   "kurallar": [
     { "eylem": "cigkofte",  "etiket": "Çiğ Köfteci Ol",      "jeton": 1,  "ikon": "🌹", "ad": ["Rose", "Gül"], "id": ["5655"] },
     { "eylem": "halaybasi", "etiket": "Halay Başı Ol",       "jeton": 10, "ikon": "🌹", "ad": [], "id": [] },

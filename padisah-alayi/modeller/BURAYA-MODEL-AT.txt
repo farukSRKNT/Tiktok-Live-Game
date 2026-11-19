@@ -1,0 +1,27 @@
+Kendi 3B modellerini (.glb) bu klasöre at, sayfayı yenile. Varsa kodla yapılmış figürlerin yerine geçer.
+Bu klasördeki hazır modeller araclar/blender betikleriyle üretildi (bkz. araclar/blender/BENIOKU.md).
+
+Figürler:
+  padisah.glb   Kanuni Sultan Süleyman (atıyla birlikte)
+  ibrahim.glb   İbrahim Paşa (atıyla birlikte)
+  yeniceri.glb  yürüyen yeniçeri (izleyiciler)
+  mehter.glb    mehter
+  sancak.glb    sancaktar
+  musahip.glb   padişahın yanında yürüyen
+  sipahi.glb    atlı sipahi
+Çeşit eklemek için sonuna -2, -3 … koy: yeniceri-2.glb, mehter-3.glb. Yeniçeriler kişiye göre,
+diğer roller sırayla çeşitlenir (mehter: davul, zurna, zil, nakkare, boru).
+
+Yapılar:
+  ev-1.glb, ev-2.glb …  yol kenarındaki evler (rastgele seçilir)
+  kadirga.glb           deniz geçişinde alayın bindiği gemi (güverte y=0, burun -z, kürek sıraları z 0..36)
+  liman.glb             kara ile denizin buluştuğu yere konan liman (kıyı z=0, deniz -z tarafında)
+
+Parçaları şu adlarla adlandırırsan oyun onları kendisi oynatır (yürüyüş, selam, "çok yaşa", bayrak dalgası):
+  govde, kolL, kolR, bacakL, bacakR, bas, bayrak   (atlılarda ayrıca at_govde, at_boyun, at_kuyruk, at_bacak0..3)
+Böyle modeller oyun ölçüsünde kabul edilir (döndürme 0, boy olduğu gibi).
+
+Parça adı olmayan modelde içindeki yürüme animasyonu (adında walk / yuru / ride geçen) oynar,
+boyu otomatik ayarlanır. Yanlış durursa ayar.json kullan:
+  { "padisah": { "boy": 3.2, "y": 0, "don": 180 } }
+boy: metre cinsinden yükseklik, y: yukarı/aşağı kaydırma, don: derece cinsinden döndürme.

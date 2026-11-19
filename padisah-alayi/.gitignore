@@ -1,0 +1,5 @@
+node_modules/
+.sahne-tarayici/
+durum.json
+araclar/blender/onizleme/
+__pycache__/
