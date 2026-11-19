@@ -32,8 +32,34 @@ export function createDirector(camera) {
   function snapshot() { return { pos: camera.position.clone(), look: D.look.clone(), fov: camera.fov }; }
   function go(name, dur) { D.from = snapshot(); D.cur = name; D.dur = dur; D.t = 0; }
 
+  // Kişiye yakın çekim. mod 'rol': rol değiştiren yeni yerine geçerken (öncelikli, başka odak bölemez),
+  // mod 'yorum': yorum yapana yaklaşıp geri uzaklaşır. hedef(): figürün o anki nesnesi (yeniden kurulsa da izlenir).
+  const tmpP = V(0, 0, 0);
+  D.oncelikli = () => D.cur === 'kisi' && D.kisi && D.kisi.mod === 'rol' && D.t < D.dur;
+  D.kisiyeOdakla = (hedef, dur, mod) => {
+    if (D.oncelikli() && mod !== 'rol') return false;
+    D.kisi = { hedef, mod };
+    D.focus = true; go('kisi', dur);
+    return true;
+  };
+  function kisiCekim(u) {
+    const o = D.kisi && D.kisi.hedef();
+    if (!o) return null;
+    o.getWorldPosition(tmpP);
+    const atli = !!(o.userData && o.userData.at);
+    const boy = atli ? 3.2 : 2.0;
+    const yan = tmpP.x >= 0 ? 1 : -1; // alayın dış tarafından bak
+    let d;
+    if (D.kisi.mod === 'rol') d = lerp(atli ? 10 : 8.5, atli ? 8 : 6.5, smooth(u)); // yavaşça yaklaş
+    else d = lerp(atli ? 8 : 6, atli ? 14 : 12, smooth((u - 0.3) / 0.7)); // önce yakın, sonra uzaklaş
+    // yanlardan ve yukarıdan bakar: kalabalığın içindeki kişi, önündekilerin üstünden görünsün
+    const dir = V(yan * 0.8, 0, -0.6).normalize();
+    return { pos: V(tmpP.x + dir.x * d, boy * 0.9 + d * 0.55, tmpP.z + dir.z * d), look: V(tmpP.x, boy * 0.7, tmpP.z), fov: 32 };
+  }
+
   D.focusOn = (name, dur = 6) => {
     if (!SHOTS[name]) return;
+    if (D.oncelikli()) return; // rol değişimi gösterilirken başka odak araya girmez
     if (D.cur === 'harita' && name !== 'harita' && D.t < D.dur - 2) return; // harita bölünmesin
     if (D.focus && D.cur === name) { D.dur = Math.max(D.dur, D.t + dur); return; }
     D.focus = true; go(name, dur);
@@ -52,7 +78,8 @@ export function createDirector(camera) {
       if (P.varis) n = 'varis';
       go(n, TOUR[D.i][1]);
     }
-    const p = SHOTS[D.cur](Math.min(1, D.t / D.dur), D.P);
+    let p = D.cur === 'kisi' ? kisiCekim(Math.min(1, D.t / D.dur)) : SHOTS[D.cur](Math.min(1, D.t / D.dur), D.P);
+    if (!p) { D.cur = 'genis'; p = SHOTS.genis(Math.min(1, D.t / D.dur), D.P); } // kişi alaydan çıktıysa
     if (D.from && D.t < BLEND) {
       const k = smooth(D.t / BLEND);
       p.pos.lerpVectors(D.from.pos, p.pos, k); p.look.lerpVectors(D.from.look, p.look, k); p.fov = lerp(D.from.fov, p.fov, k);
