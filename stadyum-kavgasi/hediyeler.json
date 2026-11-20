@@ -1,0 +1,19 @@
+{
+  "_aciklama": [
+    "Stadyum Kavgası hediye kuralları. Kaydedip sayfayı yenilemen yeterli.",
+    "eylem (değiştirme): can | ofke | mesale | dev | takviye | ultras",
+    "etiket: ekranda görünen ad. jeton: hediyenin jeton değeri. minJeton: bu değer ve üstü (listede olmayan) her hediye.",
+    "ikon: emoji (gerçek hediye resmi öğrenilince o görünür).",
+    "ad / id: TikTok'taki hediye adı / ID'si (kontrol panelindeki 'Hediye kaydı'ndan bak). Boşsa sadece jeton değerine göre eşleşir.",
+    "Takımının adını yazan (Galatasaray, Fener, Trabzon, Konya...) o takımın formasıyla sahaya iner. Ölmeden tekrar gelemez.",
+    "Hediye atan sahada değilse, son takımıyla (yoksa en az kişili takımla) sahaya iner."
+  ],
+  "kurallar": [
+    { "eylem": "can",     "etiket": "Canı Doldur",      "jeton": 1,    "ikon": "🌹", "ad": ["Rose", "Gül"], "id": ["5655"] },
+    { "eylem": "ofke",    "etiket": "Öfke Modu",        "jeton": 5,    "ikon": "😡", "ad": [], "id": [] },
+    { "eylem": "mesale",  "etiket": "Meşale Yak",       "jeton": 30,   "ikon": "🔥", "ad": [], "id": [] },
+    { "eylem": "dev",     "etiket": "Dev Ol",           "jeton": 99,   "ikon": "💪", "ad": [], "id": [] },
+    { "eylem": "takviye", "etiket": "5 Kişilik Takviye", "jeton": 199,  "ikon": "🚌", "ad": [], "id": [] },
+    { "eylem": "ultras",  "etiket": "Ultras Akını",     "minJeton": 1000, "ikon": "📯", "ad": [], "id": [] }
+  ]
+}

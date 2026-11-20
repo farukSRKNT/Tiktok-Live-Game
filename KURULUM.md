@@ -1,6 +1,6 @@
 # Kurulum: TikTok canlı yayın halay oyunları
 
-Bu klasörde üç oyun var:
+Bu klasörde beş oyun var:
 
 | Klasör | Oyun | Adres |
 |---|---|---|
@@ -8,8 +8,9 @@ Bu klasörde üç oyun var:
 | `sira-gecesi` | Sıra gecesi (3B, hamam böcekleri): orkestra, çiğ köfte, halay, masalar | http://localhost:3100 |
 | `padisah-alayi` | Padişah alayı (3B): İstanbul'dan Manisa'ya yürüyüş, canlı harita | http://localhost:3200 |
 | `sehzade-mustafa` | Şehzade Mustafa'nın cenazesi (3B): Ereğli'den Bursa'ya, sonunda defin | http://localhost:3300 |
+| `stadyum-kavgasi` | Stadyum kavgası (3B): takımını yazan formasıyla sahaya iner, taraftarlar kapışır | http://localhost:3400 |
 
-Hepsi aynı şekilde kurulur. (`padisah-alayi` ve `sehzade-mustafa`nın `ayarlar.json`'u boşsa ya da yoksa diğer oyunların ayarlarını kullanır.) Aşağıdaki adımlar Windows içindir.
+Hepsi aynı şekilde kurulur. (`padisah-alayi`, `sehzade-mustafa` ve `stadyum-kavgasi`, kendi `ayarlar.json`'ları boşsa ya da yoksa diğer oyunların ayarlarını kullanır.) Aşağıdaki adımlar Windows içindir.
 
 ---
 
