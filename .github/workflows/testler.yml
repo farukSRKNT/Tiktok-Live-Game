@@ -1,0 +1,26 @@
+name: Testler
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  uctan-uca:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Oyun bağımlılıkları
+        run: for d in canli-dugun sira-gecesi padisah-alayi; do (cd "$d" && npm ci); done
+      - name: Test bağımlılıkları ve Chromium
+        working-directory: test
+        run: |
+          npm ci
+          npx playwright-core install --with-deps chromium
+      - name: Uçtan uca testler
+        working-directory: test
+        run: npm test
