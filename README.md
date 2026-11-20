@@ -20,3 +20,7 @@ Oyun bilgisayarında bir web sayfası olarak çalışır. Küçük bir sunucu, y
 Adım adım anlatım ve sorun çözme: **[KURULUM.md](KURULUM.md)**
 
 Kendi müziklerini her oyunun `müzik` klasörüne atabilirsin.
+
+## Loglar ve testler
+
+Oyunda olan her şey (yorum, hediye, rol değişimi, durak…) `loglar/` klasörüne JSON olarak düşer. Oyunları TikTok'suz uçtan uca test etmek için: **[test/BENIOKU.md](test/BENIOKU.md)**

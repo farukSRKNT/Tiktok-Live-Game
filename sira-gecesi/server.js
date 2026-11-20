@@ -8,8 +8,11 @@
 const http = require('http');
 const fs = require('fs');
 const path = require('path');
+const { createKayit } = require('../ortak/kayit');
 
 const PORT = process.env.PORT || 3100;
+// Olay kaydı: her şey loglar/YYYY-MM-DD.jsonl'e JSON satırı olarak düşer, /api/log'dan okunur (testler: test/ klasörü)
+const kayit = createKayit({ oyun: 'sira-gecesi', dir: process.env.LOG_DIR || path.join(__dirname, 'loglar') });
 const THREE_DIR = path.join(__dirname, 'node_modules', 'three');
 const ROOT = path.join(__dirname, 'public');
 const CONFIG_FILE = path.join(__dirname, 'ayarlar.json');
@@ -71,6 +74,7 @@ function setStatus(state, message) {
   status = { state, username: live.username, message };
   broadcast({ type: 'status', status });
   console.log(`[TikTok] ${state.padEnd(10)} ${message}`);
+  kayit.yaz({ tur: 'baglanti', durum: state, hesap: live.username, mesaj: message });
 }
 
 let lib = null;
@@ -100,7 +104,9 @@ const GIFT_ICONS = { rose: '🌹', gül: '🌹', heart: '💗', kalp: '💗', 'f
 
 function send(type, d, extra) {
   const user = userOf(d);
-  if (user) broadcast({ type, user, ...extra });
+  if (!user) return;
+  kayit.yaz({ kaynak: 'tiktok', tur: 'tiktok', olay: type, kullanici: user, ...extra });
+  broadcast({ type, user, ...extra });
 }
 
 function attach(conn, gen) {
@@ -242,12 +248,14 @@ const json = (res, obj, code = 200) => { res.writeHead(code, { 'Content-Type': '
 http.createServer(async (req, res) => {
   let p;
   try { p = decodeURIComponent(new URL(req.url, 'http://x').pathname); } catch { p = '/'; }
+  if (await kayit.istek(req, res, p)) return; // /api/log ve /ortak/kayit-istemci.js
 
   if (p === '/api/events') {
     res.writeHead(200, { 'Content-Type': 'text/event-stream; charset=utf-8', 'Cache-Control': 'no-cache', Connection: 'keep-alive' });
     res.write(`data: ${JSON.stringify({ type: 'status', status })}\n\n`);
     clients.add(res);
-    req.on('close', () => clients.delete(res));
+    kayit.yaz({ tur: 'sse', acik: clients.size });
+    req.on('close', () => { clients.delete(res); kayit.yaz({ tur: 'sse', acik: clients.size }); });
     return;
   }
   if (p === '/api/status') return json(res, { status, savedUsername: config.username });
@@ -263,6 +271,11 @@ http.createServer(async (req, res) => {
     return json(res, { ok: true });
   }
 
+  if (p === '/api/test' && req.method === 'POST') { // test / otomatik test: olayı TikTok'tan gelmiş gibi tüm açık sayfalara yollar
+    const ev = await readJson(req);
+    if (ev && typeof ev.type === 'string') { kayit.yaz({ ...ev, kaynak: 'test', tur: 'enjekte', olay: ev.type }); broadcast(ev); }
+    return json(res, { ok: true });
+  }
   if (p === '/api/rules') { // hediyeler.json her istekte okunur: düzenleyip sayfayı yenilemek yeter
     try {
       const data = JSON.parse(fs.readFileSync(path.join(__dirname, 'hediyeler.json'), 'utf8'));
@@ -305,7 +318,8 @@ http.createServer(async (req, res) => {
   console.log(`  🎬 OBS için (yayın modu):   http://localhost:${PORT}/?clean\n`);
   let n = 0; try { n = fs.readdirSync(MUSIC_DIR).filter((f) => AUDIO_RE.test(f)).length; } catch {}
   console.log(`  🎵 Müzik klasörü (${n} parça): ${MUSIC_DIR}\n`);
-  if (config.username) connect(config.username); // kayıtlı kullanıcı varsa otomatik bağlan / yayını bekle
+  kayit.yaz({ tur: 'basladi', port: Number(PORT), pid: process.pid });
+  if (config.username && !process.env.TIKTOK_KAPALI) connect(config.username); // kayıtlı kullanıcı varsa otomatik bağlan / yayını bekle
 }).on('error', (e) => {
   if (e.code === 'EADDRINUSE') {
     console.log(`\n  ✅ Sunucu zaten açık: http://localhost:${PORT}  (bu pencereyi kapatabilirsin)\n`);

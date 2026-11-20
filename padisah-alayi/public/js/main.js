@@ -33,6 +33,15 @@ const world = buildWorld(scene);
 const alay = createAlay(scene);
 const G = createGame(alay);
 window.CD = window.CD || {}; window.CD.game = G;
+// olay kaydı (loglar/ + /api/log): girdiler, oyun olayları, katılan/ayrılan, rol değişimi, seviye/durak/varış
+if (window.OyunKayit) window.OyunKayit.bagla(G, {
+  uyeler: () => alay.uyeler,
+  rol: (u) => u.rol,
+  durum: () => ({ seviye: G.level, durum: G.durum, sefer: G.sefer, durak: G.sonDurak }),
+  ozet: () => ({ s: Math.round(G.s), km: Math.round(G.km() * 10) / 10, begeni: G.likes, elmas: G.diamonds, enerji: Math.round(G.energy) }),
+  sessiz: ['yukle', 'senkron'], // kayıttan yükleme / panel eşitlemesi yeni katılım sayılmaz
+  hazir: () => kayitHazir,
+});
 const director = createDirector(camera);
 window.CD.director = director; window.CD.alay = alay; window.CD.world = world;
 const map = createMap(document.getElementById('map'));
@@ -131,14 +140,15 @@ if (SSE) {
   const SAHNE = qs.has('clean');
   setInterval(async () => {
     if (!kayitHazir) return;
-    if (SAHNE) return post('/api/durum', G.kaydet());
+    if (SAHNE) return post('/api/durum', { ...G.kaydet(), sahne: true });
     try {
       const d = await (await fetch('/api/durum')).json();
-      if (d && d.v === 1 && Date.now() - d.t < 10000) G.senkron(d);
+      // yalnızca sahne penceresinin kaydına uyar: panel kendi eski kaydına uyunca yeni gelenleri siliyordu
+      if (d && d.v === 1 && d.sahne && Date.now() - d.t < 10000) G.senkron(d);
       else post('/api/durum', G.kaydet());
     } catch {}
   }, 2000);
-  if (SAHNE) addEventListener('pagehide', () => { if (kayitHazir) navigator.sendBeacon('/api/durum', new Blob([JSON.stringify(G.kaydet())], { type: 'application/json' })); });
+  if (SAHNE) addEventListener('pagehide', () => { if (kayitHazir) navigator.sendBeacon('/api/durum', new Blob([JSON.stringify({ ...G.kaydet(), sahne: true })], { type: 'application/json' })); });
 
   demo.paused = true;
   setTimeout(() => { demo.paused = false; }, 3000);

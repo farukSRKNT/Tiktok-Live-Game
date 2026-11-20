@@ -34,6 +34,13 @@ const camera = new THREE.PerspectiveCamera(50, W / H, 0.1, 90);
 const salon = buildSalon(scene);
 const G = createGame(scene, salon);
 window.CD = window.CD || {}; window.CD.game = G; // ses.js tempo seviyesini buradan okur
+// olay kaydı (loglar/ + /api/log): girdiler, oyun olayları, katılan/ayrılan, rol değişimi, seviye
+if (window.OyunKayit) window.OyunKayit.bagla(G, {
+  uyeler: () => [...G.users.values()],
+  rol: (u) => (u.leader ? 'halaybasi' : u.role),
+  durum: () => ({ seviye: G.level, ayakta: G.time < G.standUntil }),
+  ozet: () => ({ begeni: G.likes, elmas: G.diamonds, enerji: Math.round(G.energy) }),
+});
 const director = createDirector(camera);
 
 const composer = new EffectComposer(renderer);
