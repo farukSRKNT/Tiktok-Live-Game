@@ -1,6 +1,6 @@
 # TikTok canlı yayın halay oyunları
 
-TikTok LIVE için dört etkileşimli oyun. İzleyiciler yorum yazarak, beğeni ve hediye atarak oyuna katılır.
+TikTok LIVE için beş etkileşimli oyun. İzleyiciler yorum yazarak, beğeni ve hediye atarak oyuna katılır.
 
 - **canli-dugun**: düğün oyunu (2B). Halay halkası, gelin, damat, takı.
 - **sira-gecesi**: sıra gecesi (3B, hamam böcekleri). Sahnede orkestra, ortada çiğ köfte, etrafında halay, yanlarda masalar.
