@@ -385,6 +385,7 @@ export function createGame(scene, stadyum, FX) {
         else if (e > 0.5) { vx -= f.x * 0.06; vz -= f.z * 0.06; } // ortaya hafif çekim
       }
       f.x += vx * dt; f.z += vz * dt;
+      if (f.duz) { const k = Math.min(dt, f.duz.kalan); f.x += f.duz.x * k; f.z += f.duz.z * k; f.duz.kalan -= k; if (f.duz.kalan <= 0) f.duz = null; }
       f.hiz += (hizH - f.hiz) * Math.min(1, dt * 8);
       f.faz += dt * (6 + f.hiz * 7);
       if (Math.hypot(vx, vz) > 0.5 && f.durum !== 'kavga') f.yon = aciYaklas(f.yon, Math.atan2(vx, vz), dt * 10);
@@ -461,7 +462,9 @@ export function createGame(scene, stadyum, FX) {
       if (!x) { if (f.durum !== 'ko' && G.time - f.girisT > 5) nakavt(f, null); continue; } // yeni girenler kayda henüz düşmemiş olabilir
       if (x.ko && f.durum !== 'ko') { nakavt(f, null); f.olduren = x.olduren; continue; }
       f.hp = x.hp; f.maxHp = x.maxHp; f.kill = x.kill;
-      if (f.durum === 'kavga') { f.x += (x.x - f.x) * 0.5; f.z += (x.z - f.z) * 0.5; }
+      // Konum: kayıt 2 sn'ye kadar eski olabiliyor; her seferinde geri çekmek koşanları "2 ileri 1 geri" oynatıyordu.
+      // Küçük farklar bırakılır, büyük fark (3 m+) ise bir saniyeye yayılarak yumuşakça kapatılır.
+      if (f.durum === 'kavga') { const dx = x.x - f.x, dz = x.z - f.z; if (Math.hypot(dx, dz) > 3) f.duz = { x: dx, z: dz, kalan: 1 }; }
     }
     for (const x of d.savascilar || []) { const e = G.savascilar.get(x.id); if (!x.ko && (!e || e.durum === 'ko')) kur(x); }
     G.likes = Math.max(G.likes, d.likes || 0); G.diamonds = Math.max(G.diamonds, d.diamonds || 0);
