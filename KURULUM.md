@@ -7,8 +7,9 @@ Bu klasörde üç oyun var:
 | `canli-dugun` | Düğün oyunu (2B): halay halkası, gelin, damat, takı | http://localhost:3000 |
 | `sira-gecesi` | Sıra gecesi (3B, hamam böcekleri): orkestra, çiğ köfte, halay, masalar | http://localhost:3100 |
 | `padisah-alayi` | Padişah alayı (3B): İstanbul'dan Manisa'ya yürüyüş, canlı harita | http://localhost:3200 |
+| `sehzade-mustafa` | Şehzade Mustafa'nın cenazesi (3B): Ereğli'den Bursa'ya, sonunda defin | http://localhost:3300 |
 
-Hepsi aynı şekilde kurulur. (`padisah-alayi`nın `ayarlar.json`'u boşsa diğer oyunların ayarlarını kullanır.) Aşağıdaki adımlar Windows içindir.
+Hepsi aynı şekilde kurulur. (`padisah-alayi` ve `sehzade-mustafa`nın `ayarlar.json`'u boşsa ya da yoksa diğer oyunların ayarlarını kullanır.) Aşağıdaki adımlar Windows içindir.
 
 ---
 

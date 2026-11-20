@@ -1,0 +1,15 @@
+Kendi 3B modellerini (.glb) bu klasöre at, sayfayı yenile. Varsa kodla yapılmış figürlerin yerine geçer.
+Bu klasör boşsa yeniçeri, sancaktar, sipahi ve ev modelleri Padişah Alayı'nın modeller/ klasöründen alınır.
+
+Figürler:
+  mustafa.glb   Şehzade Mustafa sedyesiyle birlikte (sedye üstü y≈1.55, baş -z yönünde)
+  yeniceri.glb  yürüyen yeniçeri ve tabutu taşıyanlar (izleyiciler)
+  sancak.glb    sancaktar
+  sipahi.glb    atlı sipahi
+Çeşit eklemek için sonuna -2, -3 … koy: yeniceri-2.glb.
+
+Yapılar:
+  ev-1.glb, ev-2.glb …  yol kenarındaki evler (rastgele seçilir)
+
+Parça adları (govde, kolL, kolR, bacakL, bacakR, bas, bayrak …) Padişah Alayı'ndakiyle aynıdır.
+İsteğe bağlı ayar.json: { "mustafa": { "boy": 2, "y": 0, "don": 0 } }
