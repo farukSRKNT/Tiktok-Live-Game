@@ -73,13 +73,22 @@ export function createGame(scene, stadyum, FX) {
       no, olcek: 1, ofkeBitis: 0, devBitis: 0, girisT: G.time, gx: g.ix, gz: g.iz,
     };
     if (opt.yerinde) { f.durum = 'kavga'; } else { f.anim = { ad: 'atla', t: 0, sure: 0.75 }; f.atla = { x0: g.x, z0: g.z, x1: g.ix, z1: g.iz }; }
+    const eski = G.savascilar.get(u.id);
+    if (eski && eski !== f) scene.remove(eski.ch); // yere serilmiş eski hali (yatan beden) hemen kalksın
     G.savascilar.set(u.id, f);
     if (!u.bot) { u.sonTakim = T.id; u.f = f; }
     return f;
   }
 
+  // Kişi sahadaysa (koşarak giriyor ya da dövüşüyor) hiçbir şey olmaz: yeni karakter yok, takım değişmez.
+  G.sahadaki = (u) => {
+    const f = G.savascilar.get(u.id);
+    if (f && f.durum !== 'ko') return f;
+    for (const o of G.savascilar.values()) if (!o.bot && o.durum !== 'ko' && (o.u === u || o.u.id === u.id)) return o;
+    return null;
+  };
   function katil(u, T, neden) {
-    if (u.f && u.f.durum !== 'ko' && G.savascilar.get(u.id) === u.f) return null;
+    if (G.sahadaki(u)) return null;
     const f = sahayaIn(u, T);
     if (!f) return null;
     G.emit('feed', { kind: 'join', user: u, text: `${T.ad} formasıyla sahaya indi` });
@@ -190,8 +199,8 @@ export function createGame(scene, stadyum, FX) {
     if (!ev.user || !ev.user.id) return;
     if (ev.type === 'member') return;
     const u = ensure(ev.user);
-    const f = G.savascilar.get(u.id);
-    const sahada = f && f.durum !== 'ko';
+    const f = G.sahadaki(u);
+    const sahada = !!f;
     switch (ev.type) {
       case 'chat': {
         const text = String(ev.text || '').slice(0, 120);
@@ -249,8 +258,8 @@ export function createGame(scene, stadyum, FX) {
     const m = G.matchRule({ ...gf, diamonds: dia });
     G.emit('giftlog', { user: u, gift: gf, dia, cnt, match: m });
     G.emit('feed', { kind: 'gift', user: u, text: `${gf.icon || '🎁'} ${gf.name || 'Hediye'} ×${cnt}${m ? ' → ' + m.r.etiket : ''} · ${fmt(total)} 💎` });
-    let f = G.savascilar.get(u.id);
-    if (!f || f.durum === 'ko') f = katil(u, varsayilanTakim(u), 'hediye'); // hediye atan sahada değilse iner
+    let f = G.sahadaki(u);
+    if (!f) f = katil(u, varsayilanTakim(u), 'hediye'); // hediye atan sahada değilse iner
     if (!f) return;
     if (m) { action(m.r, u, f, gf, cnt, total); G.emit('ruleHit', m.r.eylem); }
     else {
@@ -454,7 +463,7 @@ export function createGame(scene, stadyum, FX) {
       f.hp = x.hp; f.maxHp = x.maxHp; f.kill = x.kill;
       if (f.durum === 'kavga') { f.x += (x.x - f.x) * 0.5; f.z += (x.z - f.z) * 0.5; }
     }
-    for (const x of d.savascilar || []) if (!x.ko && !G.savascilar.has(x.id)) kur(x);
+    for (const x of d.savascilar || []) { const e = G.savascilar.get(x.id); if (!x.ko && (!e || e.durum === 'ko')) kur(x); }
     G.likes = Math.max(G.likes, d.likes || 0); G.diamonds = Math.max(G.diamonds, d.diamonds || 0);
     G.skor.clear(); for (const sc of d.skor || []) G.skor.set(sc.id, { ...sc });
     G.takimKill = d.takimKill || {};

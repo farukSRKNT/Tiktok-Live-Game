@@ -101,25 +101,28 @@ UI.renderRuleButtons();
 let kayitHazir = !SSE;
 if (SSE) {
   fetch('/api/durum').then((r) => r.json()).then((d) => { if (G.yukle(d)) console.log('[durum] kaldığı yerden devam:', d.savascilar.length, 'kişi'); })
-    .catch(() => {}).finally(() => { kayitHazir = true; });
-  // Tek otorite: yayına verilen sahne penceresi (?clean) durumu kaydeder, canı ve ölümleri o belirler; kontrol paneli ona uyar.
-  // Sahne penceresi açık değilse (son kayıt 10 sn'den eskiyse) panel kaydeder.
+    .catch(() => {}).finally(() => { kayitHazir = true; esitle(); });
+  // Tek otorite: aynı anda tek pencere oyunu yönetir (canları, ölümleri o belirler ve durumu kaydeder), diğerleri ona uyar.
+  // Öncelik yayına verilen sahne penceresinde (?clean). İki sahne penceresi açık kalırsa (BASLAT iki kez çalıştı)
+  // ilk açılan yönetir, ikincisi ona uyar: eskiden ikisi de kaydediyordu, panel iki farklı oyun arasında gidip
+  // gelip her şeyi sürekli baştan kuruyordu. Yöneten pencere kapanınca (12 sn ses gelmezse) sıradaki devralır.
   const SAHNE = qs.has('clean');
-  G.yetkili = true;
-  setInterval(async () => {
+  const BENIM = Math.random().toString(36).slice(2, 10);
+  const kaydet = () => ({ ...G.kaydet(), sahne: SAHNE, pencere: BENIM });
+  G.yetkili = false; // sunucu söyleyene kadar can/ölüm işlemez (iki pencere farklı oyun kurmasın)
+  let oncekiYetki = null;
+  async function esitle() {
     if (!kayitHazir) return;
-    if (SAHNE) return; // sahne kendi kaydını aşağıda yollar
-    try {
-      const d = await (await fetch('/api/durum')).json();
-      if (d && d.v === 1 && Date.now() - d.t < 10000 && d.sahne) { G.yetkili = false; G.senkron(d); }
-      else { G.yetkili = true; post('/api/durum', G.kaydet()); }
-    } catch {}
-  }, 2000);
-  const kaydet = () => ({ ...G.kaydet(), sahne: SAHNE });
-  if (SAHNE) {
-    setInterval(() => { if (kayitHazir) post('/api/durum', kaydet()); }, 2000);
-    addEventListener('pagehide', () => { if (kayitHazir) navigator.sendBeacon('/api/durum', new Blob([JSON.stringify(kaydet())], { type: 'application/json' })); });
+    let r;
+    try { r = await (await fetch('/api/durum', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(kaydet()) })).json(); } catch { return; }
+    if (!r || !r.ok) return;
+    G.yetkili = r.yonetici !== false;
+    if (oncekiYetki !== G.yetkili) console.log(G.yetkili ? '[durum] bu pencere oyunu yönetiyor' : '[durum] bu pencere yöneten pencereye uyuyor');
+    oncekiYetki = G.yetkili;
+    if (!G.yetkili && r.durum) G.senkron(r.durum);
   }
+  setInterval(esitle, 2000);
+  addEventListener('pagehide', () => { if (kayitHazir && G.yetkili) navigator.sendBeacon('/api/durum', new Blob([JSON.stringify(kaydet())], { type: 'application/json' })); });
 
   demo.paused = true;
   setTimeout(() => { demo.paused = false; }, 3000);

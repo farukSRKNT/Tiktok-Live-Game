@@ -68,6 +68,7 @@ const readImages = () => { try { return JSON.parse(fs.readFileSync(IMG_FILE, 'ut
 // Sayfalar birkaç saniyede bir durumu yollar; açılan sayfa buradan devam eder. Sıfırla düğmesi siler.
 const DURUM_FILE = path.join(__dirname, 'durum.json');
 let durum = null;
+let yonetici = null; // { id, sahne, son }: durumu yazmaya yetkili pencere
 try { durum = JSON.parse(fs.readFileSync(DURUM_FILE, 'utf8')); } catch {}
 let durumYaz = null;
 const durumKaydet = () => { clearTimeout(durumYaz); durumYaz = setTimeout(() => fs.writeFile(DURUM_FILE, JSON.stringify(durum), () => {}), 1000); };
@@ -285,7 +286,21 @@ http.createServer(async (req, res) => {
   }
 
   if (p === '/api/durum') {
-    if (req.method === 'POST') { const b = await readJson(req); if (b && b.v === 1) { durum = b; durumKaydet(); } return json(res, { ok: true }); }
+    if (req.method === 'POST') {
+      // Aynı anda tek pencere yönetir (sahne penceresi panele göre önceliklidir). Yöneten 12 sn ses vermezse sıradaki devralır.
+      // Diğer pencerelerin kaydı alınmaz; onlara yönetenin durumu döner, ona uyarlar.
+      const b = await readJson(req);
+      if (!b || b.v !== 1) return json(res, { ok: false });
+      const simdi = Date.now(), y = yonetici;
+      const al = !b.pencere || !y || y.id === b.pencere || simdi - y.son > 12000 || (b.sahne && !y.sahne);
+      if (al) {
+        if (b.pencere && (!y || y.id !== b.pencere)) console.log(`[durum] oyunu yöneten pencere: ${b.sahne ? 'sahne' : 'panel'} (${b.pencere})`);
+        yonetici = b.pencere ? { id: b.pencere, sahne: !!b.sahne, son: simdi } : null;
+        durum = b; durumKaydet();
+        return json(res, { ok: true, yonetici: true });
+      }
+      return json(res, { ok: true, yonetici: false, durum });
+    }
     return json(res, durum || {});
   }
   if (p === '/api/sifirla' && req.method === 'POST') {
